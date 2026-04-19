@@ -1,5 +1,7 @@
 ﻿.env
 data/
-*.pdf
+resumes/
 __pycache__/
-.env*
+*.pdf
+debug.html
+debug_scraper
