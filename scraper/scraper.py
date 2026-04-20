@@ -225,4 +225,24 @@ if __name__ == "__main__":
     with open("data/jobs.json", "w", encoding="utf-8") as f:
         json.dump(all_scraped_jobs, f, indent=2)
     
-    print(f"\n🎉 Mission Complete! Collected {len(all_scraped_jobs)} total jobs.")
+    print(f"\n🎉 Mission Complete! Collected {len(all_scraped_jobs)} total jobs.") 
+    
+    # Deduplicate by URL
+seen_urls = set()
+unique_jobs = []
+for job in all_scraped_jobs:
+    if job["url"] not in seen_urls:
+        seen_urls.add(job["url"])
+        unique_jobs.append(job)
+
+all_scraped_jobs = unique_jobs
+print(f"🧹 After dedup: {len(all_scraped_jobs)} unique jobs")
+
+def clean_text(text: str) -> str:
+    if not text: return ""
+    text = " ".join(text.split())
+    # Fix duplicated titles
+    mid = len(text) // 2
+    if len(text) > 10 and text[:mid].strip() == text[mid:].strip():
+        return text[:mid].strip()
+    return text
