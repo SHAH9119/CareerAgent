@@ -214,23 +214,26 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun, onLogout 
           </div>
         </Card>
 
-        <Card
-          title="Scoring Weights"
-          icon={<Icon name="brain" size={13} />}
-          subtitle="These weights are loaded from the active domain config."
-        >
-          <div className="weights-grid">
-            {Object.entries(weights).map(([key, value]) => (
-              <div key={key} className="weight-row">
-                <div className="weight-row-head">
-                  <span>{key.replaceAll("_", " ")}</span>
-                  <strong>{Math.round(Number(value) * 100)}%</strong>
+        <details className="settings-advanced">
+          <summary>Advanced scoring internals</summary>
+          <Card
+            title="Scoring Weights"
+            icon={<Icon name="brain" size={13} />}
+            subtitle="Internal formula weights used to calculate the final fit percentage."
+          >
+            <div className="weights-grid">
+              {Object.entries(weights).map(([key, value]) => (
+                <div key={key} className="weight-row">
+                  <div className="weight-row-head">
+                    <span>{key.replaceAll("_", " ")}</span>
+                    <strong>{Math.round(Number(value) * 100)}%</strong>
+                  </div>
+                  <input className="slider" type="range" min={0} max={50} value={Math.round(Number(value) * 100)} readOnly />
                 </div>
-                <input className="slider" type="range" min={0} max={50} value={Math.round(Number(value) * 100)} readOnly />
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        </details>
 
         <Card
           title="Domain Rules JSON"

@@ -28,6 +28,7 @@ class JobSearchPreferences:
     custom_queries: list[str] | None = None
     sector: str = ""
     workplace_type: str = ""
+    workplace_types: list[str] | None = None
     profile: dict | None = None
     domain_config_path: str = ""
 
@@ -191,8 +192,12 @@ def prefilter_jobs(jobs: list[dict], preferences: JobSearchPreferences) -> list[
         # Skip wrong seniority level
         if preferences.sector and job.get("sector") and job.get("sector") != preferences.sector:
             continue
-        if preferences.workplace_type and job.get("workplace_type") and job.get("workplace_type") != preferences.workplace_type:
-            continue
+        selected_workplaces = {item.lower() for item in (preferences.workplace_types or []) if item}
+        if not selected_workplaces and preferences.workplace_type:
+            selected_workplaces = {preferences.workplace_type.lower()}
+        if selected_workplaces and len(selected_workplaces) < 3 and job.get("workplace_type"):
+            if str(job.get("workplace_type", "")).lower() not in selected_workplaces:
+                continue
         if any(term in title for term in excluded_level_terms):
             continue
 

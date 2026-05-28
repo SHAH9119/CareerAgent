@@ -49,7 +49,7 @@ export function Inspector({ job, skillAdvice, onClose, onTailor }) {
       </header>
 
       <div className="inspector-score">
-        <ScoreRing value={job.final_score} tone={tone} label="Match" />
+        <ScoreRing value={job.final_score} tone={tone} label="Fit" />
         <div className="inspector-score-side">
           <VerdictBadge verdict={job.verdict} />
           <div className="inspector-meta">
@@ -60,11 +60,11 @@ export function Inspector({ job, skillAdvice, onClose, onTailor }) {
         </div>
       </div>
 
-      <Section title="Fit Breakdown">
-        <FitBar label="Semantic Context" value={job.semantic} />
-        <FitBar label="Domain Expertise" value={job.domain} />
-        <FitBar label="Hard Skills" value={job.skills_fit} />
-        <FitBar label="Seniority Match" value={job.seniority} />
+      <Section title="Why This Recommendation">
+        <FitBar label="Resume Context" value={job.semantic} />
+        <FitBar label="Role Domain" value={job.domain} />
+        <FitBar label="Skill Coverage" value={job.skills_fit} />
+        <FitBar label="Experience Level" value={job.seniority} />
       </Section>
 
       <Section title="AI Analysis" icon="sparkle">

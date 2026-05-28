@@ -26,6 +26,9 @@ export function SearchParameters({
 }) {
   const update = (patch) => onConfigChange?.({ ...config, ...patch });
   const selectedSources = config.sources || [];
+  const selectedWorkplaces = config.workplace_types?.length
+    ? config.workplace_types
+    : ["remote", "hybrid", "on-site"];
   const queries = config.custom_queries || "";
 
   const toggleSource = (sourceId) => {
@@ -33,6 +36,19 @@ export function SearchParameters({
       ? selectedSources.filter((id) => id !== sourceId)
       : [...selectedSources, sourceId];
     update({ sources: next.length ? next : ["remotive"] });
+  };
+
+  const toggleWorkplace = (workplaceId) => {
+    const next = selectedWorkplaces.includes(workplaceId)
+      ? selectedWorkplaces.filter((id) => id !== workplaceId)
+      : [...selectedWorkplaces, workplaceId];
+    const safeNext = next.length ? next : ["remote", "hybrid", "on-site"];
+    update({
+      workplace_types: safeNext,
+      mode: safeNext.length === 3 ? "all" : safeNext.join(","),
+      remote: safeNext.length === 1 && safeNext[0] === "remote",
+      workplace_type: safeNext.length === 1 ? safeNext[0] : "",
+    });
   };
 
   return (
@@ -59,22 +75,16 @@ export function SearchParameters({
       {/* --- Section 2: Workplace Type --- */}
       <section className="param-section">
         <h3 className="section-title">Workplace Type</h3>
-        <p className="section-hint">Pick one. This filters how the role is structured.</p>
+        <p className="section-hint">Select one or more. Leave all checked for the widest search.</p>
         <div className="radio-group">
           {WORKPLACE_OPTIONS.map((opt) => (
-            <label key={opt.id} className={`radio-pill ${config.mode === opt.id ? "radio-pill-active" : ""}`}>
+            <label key={opt.id} className={`radio-pill ${selectedWorkplaces.includes(opt.id) ? "radio-pill-active" : ""}`}>
               <input
-                type="radio"
+                type="checkbox"
                 name="workplace"
                 value={opt.id}
-                checked={config.mode === opt.id}
-                onChange={() =>
-                  update({
-                    mode: opt.id,
-                    remote: opt.id === "remote",
-                    workplace_type: opt.id === "remote" ? "" : opt.id === "hybrid" ? "Hybrid" : "On-site",
-                  })
-                }
+                checked={selectedWorkplaces.includes(opt.id)}
+                onChange={() => toggleWorkplace(opt.id)}
               />
               <span>{opt.label}</span>
             </label>

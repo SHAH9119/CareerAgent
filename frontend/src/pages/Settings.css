@@ -342,3 +342,28 @@
   color: var(--text-muted);
 }
 
+.settings-advanced {
+  display: block;
+}
+
+.settings-advanced > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background: var(--bg-soft);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-advanced[open] > summary {
+  color: var(--brand-strong);
+  background: var(--brand-soft-2);
+  border-color: #c8d8ff;
+}
+

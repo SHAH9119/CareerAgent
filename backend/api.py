@@ -69,6 +69,7 @@ class AgentRunRequest(BaseModel):
     custom_queries: list[str] = Field(default_factory=list)
     sector: str = ""
     workplace_type: str = ""
+    workplace_types: list[str] = Field(default_factory=list)
     domain_config_path: str = ""
     use_db: bool = True
 
@@ -187,6 +188,7 @@ def run_agent_background(payload: AgentRunRequest, user_id: int) -> None:
             custom_queries=_sanitize_queries(payload.custom_queries) or None,
             sector=payload.sector,
             workplace_type=payload.workplace_type,
+            workplace_types=payload.workplace_types,
             domain_config_path=payload.domain_config_path,
             use_db=payload.use_db,
             user_id=user_id,

@@ -83,6 +83,7 @@ def run_pipeline(
     custom_queries: list[str] | None = None,
     sector: str = "",
     workplace_type: str = "",
+    workplace_types: list[str] | None = None,
     domain_config_path: str = "",
     use_db: bool = True,
     user_id: int | None = None,
@@ -158,6 +159,7 @@ def run_pipeline(
                 custom_queries=custom_queries,
                 sector=sector,
                 workplace_type=workplace_type,
+                workplace_types=workplace_types or [],
                 profile=profile,
                 domain_config_path=domain_config_path or profile.get("domain_config_path", ""),
             )
@@ -257,6 +259,7 @@ if __name__ == "__main__":
         custom_queries=args.queries,
         sector=args.sector,
         workplace_type=args.workplace,
+        workplace_types=[args.workplace] if args.workplace else [],
         domain_config_path=args.domain_config,
         use_db=not args.no_db,
     )
