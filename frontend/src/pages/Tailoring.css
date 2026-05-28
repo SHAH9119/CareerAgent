@@ -1,10 +1,12 @@
 .tailor {
-  padding: 28px 32px 40px;
+  padding: 24px 28px 32px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  max-width: 1400px;
+  gap: 18px;
+  max-width: 1200px;
   margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .tailor-header {
@@ -22,7 +24,7 @@
 }
 
 .tailor-title-row h1 {
-  font-size: var(--fs-4xl);
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);

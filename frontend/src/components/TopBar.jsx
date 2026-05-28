@@ -3,7 +3,6 @@ import { Icon } from "./icons";
 import "./TopBar.css";
 
 export function TopBar({
-  candidate,
   search = "",
   onSearch,
   onRun,
@@ -12,29 +11,27 @@ export function TopBar({
   status,
 }) {
   return (
-    <header className="topbar">
-      <div className="topbar-left">
-        <div className="search-box">
-          <Icon name="search" size={14} />
-          <input
-            value={search}
-            onChange={(event) => onSearch?.(event.target.value)}
-            placeholder="Search jobs, companies, skills..."
-          />
-          <kbd>Ctrl K</kbd>
-        </div>
+    <div className="dashboard-toolbar">
+      <div className="toolbar-search">
+        <Icon name="search" size={14} />
+        <input
+          value={search}
+          onChange={(event) => onSearch?.(event.target.value)}
+          placeholder="Search jobs, companies, skills..."
+          aria-label="Search jobs"
+        />
       </div>
 
-      <div className="topbar-right">
-        {status?.stage && (
-          <span className={`topbar-status topbar-status-${status.stage}`}>
-            {status.stage}
+      <div className="toolbar-actions">
+        {status?.stage && status.stage !== "idle" && (
+          <span className={`toolbar-status toolbar-status-${status.stage}`}>
+            {status.message || status.stage}
           </span>
         )}
         <Button
           variant="outline"
-          size="md"
-          icon={<Icon name="refresh" size={14} />}
+          size="sm"
+          icon={<Icon name="refresh" size={13} />}
           onClick={onRerun}
           disabled={running}
         >
@@ -42,22 +39,14 @@ export function TopBar({
         </Button>
         <Button
           variant="primary"
-          size="md"
-          icon={<Icon name="play" size={13} />}
+          size="sm"
+          icon={<Icon name="play" size={12} />}
           onClick={onRun}
           disabled={running}
         >
-          {running ? "Running" : "Run agent"}
+          {running ? "Running…" : "Run agent"}
         </Button>
-        <button type="button" className="icon-btn" aria-label="Settings">
-          <Icon name="settings-dot" size={16} />
-        </button>
-        <button type="button" className="icon-btn" aria-label="Notifications">
-          <Icon name="bell" size={16} />
-          <span className="dot" />
-        </button>
-        <div className="avatar">{candidate?.initials || "CA"}</div>
       </div>
-    </header>
+    </div>
   );
 }

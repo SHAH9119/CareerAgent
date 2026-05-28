@@ -3,12 +3,11 @@
   align-items: center;
   gap: 4px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   border-radius: 999px;
   border: 1px solid transparent;
   font-size: var(--fs-xs);
-  padding: 3px 9px;
-  text-transform: uppercase;
+  padding: 3px 8px;
   line-height: 1;
 }
 
@@ -25,19 +24,19 @@
 .badge-apply {
   color: var(--good-strong);
   background: var(--good-soft);
-  border-color: #b7ecc8;
+  border-color: #bbf7d0;
 }
 
 .badge-maybe {
   color: var(--warn-strong);
   background: var(--warn-soft);
-  border-color: #f6dca4;
+  border-color: #fde68a;
 }
 
 .badge-skip {
   color: var(--danger-strong);
   background: var(--danger-soft);
-  border-color: #f4c6c6;
+  border-color: #fecaca;
 }
 
 .badge-stretch {

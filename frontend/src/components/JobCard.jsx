@@ -1,4 +1,4 @@
-import { Badge, VerdictBadge } from "./Badge";
+import { VerdictBadge } from "./Badge";
 import { Button } from "./Button";
 import { Icon } from "./icons";
 import "./JobCard.css";
@@ -10,22 +10,16 @@ const verdictAccent = {
   STRETCH: "card-accent-stretch",
 };
 
-const scoreColor = (verdict) => {
-  if (verdict === "APPLY") return "score-good";
-  if (verdict === "MAYBE") return "score-warn";
-  if (verdict === "SKIP") return "score-bad";
-  return "score-neutral";
-};
-
-const quoteTone = {
-  APPLY: "quote-good",
-  MAYBE: "quote-warn",
-  SKIP: "quote-bad",
-};
+function oneLineReason(text = "") {
+  const clean = String(text).replace(/\s+/g, " ").trim();
+  if (clean.length <= 120) return clean;
+  return `${clean.slice(0, 117)}…`;
+}
 
 export function JobCard({ job, selected, onSelect, onTailor }) {
-  const matched = job.matched_skills || [];
-  const missing = job.missing_skills || [];
+  const matched = (job.matched_skills || []).slice(0, 4);
+  const missing = (job.missing_skills || []).slice(0, 3);
+  const reason = oneLineReason(job.ai_reason || job.detail_reason || "");
 
   return (
     <article
@@ -37,79 +31,46 @@ export function JobCard({ job, selected, onSelect, onTailor }) {
           <h3 className="job-title">{job.title}</h3>
           <div className="job-company">{job.company}</div>
           <div className="job-meta">
-            <span>
-              <Icon name="pin" size={11} /> {job.location}
-            </span>
-            <span>
-              <Icon name="money" size={11} /> {job.salary}
-            </span>
-            <span>
-              <Icon name="clock" size={11} /> {job.posted}
-            </span>
+            {job.location && (
+              <span>
+                <Icon name="pin" size={11} /> {job.location}
+              </span>
+            )}
+            {job.source && <span className="job-source">{job.source}</span>}
           </div>
         </div>
         <div className="job-card-aside">
           <VerdictBadge verdict={job.verdict} />
-          <div className={`job-score ${scoreColor(job.verdict)}`}>
-            {job.final_score}%
+          <div className="job-score-wrap">
+            <span className="job-score-label">Fit</span>
+            <span className={`job-score job-score-${(job.verdict || "").toLowerCase()}`}>
+              {job.final_score}%
+            </span>
           </div>
         </div>
       </header>
 
-      <div className="skill-row">
-        {matched.slice(0, 5).map((skill, i) => (
-          <span key={`m-${i}-${skill}`} className="skill-chip skill-have">
-            {skill}
-            <Icon name="check" size={10} />
-          </span>
-        ))}
-        {missing.slice(0, 3).map((skill, i) => (
-          <span key={`x-${i}-${skill}`} className="skill-chip skill-miss">
-            {skill}
-            <Icon name="x" size={10} />
-          </span>
-        ))}
-        {job.gap_source === "fallback" && (
-          <Badge tone="prototype" size="sm">Fallback gap</Badge>
-        )}
-      </div>
+      {(matched.length > 0 || missing.length > 0) && (
+        <div className="skill-row">
+          {matched.map((skill, i) => (
+            <span key={`m-${i}-${skill}`} className="skill-chip skill-have">
+              {skill}
+            </span>
+          ))}
+          {missing.map((skill, i) => (
+            <span key={`x-${i}-${skill}`} className="skill-chip skill-miss">
+              {skill}
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div className={`job-quote ${quoteTone[job.verdict] || "quote-warn"}`}>
-        <Icon
-          name={job.verdict === "MAYBE" || job.verdict === "SKIP" ? "warning" : "sparkle"}
-          size={14}
-        />
-        <span>"{job.ai_reason}"</span>
-      </div>
+      {reason && <p className="job-reason">{reason}</p>}
 
       <footer className="job-actions">
-        {job.url && (
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <Button variant="ghost" size="sm" icon={<Icon name="arrow-up-right" size={13} />}>
-              View
-            </Button>
-          </a>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name="wand" size={13} />}
-          onClick={(event) => {
-            event.stopPropagation();
-            onTailor?.(job);
-          }}
-        >
-          Tailor
-        </Button>
         <Button
           variant="soft"
           size="sm"
-          iconRight={<Icon name="arrow-up-right" size={13} />}
           onClick={(event) => {
             event.stopPropagation();
             onSelect?.();
@@ -117,6 +78,30 @@ export function JobCard({ job, selected, onSelect, onTailor }) {
         >
           Review
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="wand" size={12} />}
+          onClick={(event) => {
+            event.stopPropagation();
+            onTailor?.(job);
+          }}
+        >
+          Tailor
+        </Button>
+        {job.url && (
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+            className="job-view-link"
+          >
+            <Button variant="ghost" size="sm" icon={<Icon name="arrow-up-right" size={12} />}>
+              View
+            </Button>
+          </a>
+        )}
       </footer>
     </article>
   );

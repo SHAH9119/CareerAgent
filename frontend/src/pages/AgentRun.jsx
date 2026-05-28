@@ -123,7 +123,6 @@ export function AgentRun({ activeNav, onNav, onProfileClick, onNewRun, onBack, o
       onProfileClick={onProfileClick}
       onNewRun={onNewRun}
       onLogout={onLogout}
-      showTopBar={false}
     >
       <div className="run">
         <header className="run-header">

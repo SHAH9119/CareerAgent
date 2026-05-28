@@ -3,10 +3,10 @@ import { JobCard } from "./JobCard";
 import "./JobQueue.css";
 
 const TABS = [
-  { id: "all", label: "All", hint: "Every job pulled from the selected sources." },
-  { id: "apply", label: "Apply", hint: "Strong fit. Worth a tailored application." },
-  { id: "maybe", label: "Maybe", hint: "Decent fit with gaps. Worth a quick review." },
-  { id: "skip", label: "Skip", hint: "Weak fit or wrong domain. Skip unless strategic." },
+  { id: "all", label: "All" },
+  { id: "apply", label: "Apply" },
+  { id: "maybe", label: "Maybe" },
+  { id: "skip", label: "Skip" },
 ];
 
 export function JobQueue({
@@ -27,9 +27,6 @@ export function JobQueue({
     skip: jobs.filter((job) => job.verdict === "SKIP").length,
   };
 
-  // userTab is null until the user explicitly clicks a tab. Until then we
-  // derive the displayed tab from counts so the dashboard never opens to an
-  // empty "Apply" view when there are Maybe roles to review.
   const [userTab, setUserTab] = useState(null);
   const tab = userTab ?? (
     tabCounts.apply > 0 ? "apply" : tabCounts.maybe > 0 ? "maybe" : "all"
@@ -51,34 +48,36 @@ export function JobQueue({
 
   return (
     <section className="queue">
-      <header className="queue-stats">
-        <Stat label="Scanned" value={stats?.scanned ?? jobs.length} />
-        <Stat label="Shortlist" value={stats?.filtered ?? tabCounts.apply + tabCounts.maybe} />
-        <Stat label="Avg Match" value={`${stats?.avgMatch ?? 0}%`} accent="brand" />
+      <header className="queue-head">
+        <div className="queue-stats">
+          <Stat label="Scanned" value={stats?.scanned ?? jobs.length} />
+          <Stat label="Shortlist" value={stats?.filtered ?? tabCounts.apply + tabCounts.maybe} />
+          <Stat label="Avg fit" value={`${stats?.avgMatch ?? 0}%`} accent />
+        </div>
+        <div className="queue-tabs" role="tablist">
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
+              className={`queue-tab queue-tab-${item.id} ${tab === item.id ? "queue-tab-active" : ""}`}
+            >
+              {item.label}
+              <span className="queue-tab-count">{tabCounts[item.id] || 0}</span>
+            </button>
+          ))}
+        </div>
       </header>
-
-      <div className="queue-tabs">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            title={item.hint}
-            onClick={() => setTab(item.id)}
-            className={`queue-tab ${tab === item.id ? "queue-tab-active" : ""}`}
-          >
-            {item.label}
-            <span className="queue-tab-count">({tabCounts[item.id] || 0})</span>
-          </button>
-        ))}
-      </div>
 
       <div className="queue-list">
         {loading ? (
-          <div className="queue-empty">Loading real pipeline results...</div>
+          <div className="queue-empty">Loading pipeline results…</div>
         ) : error ? (
           <div className="queue-empty queue-error">{error}</div>
         ) : visibleJobs.length === 0 ? (
-          <div className="queue-empty">No jobs in this view yet.</div>
+          <div className="queue-empty">No jobs in this view. Run the agent or switch tabs.</div>
         ) : (
           visibleJobs.map((job) => (
             <JobCard
@@ -98,10 +97,8 @@ export function JobQueue({
 function Stat({ label, value, accent }) {
   return (
     <div className="stat">
-      <div className="stat-label">{label}</div>
-      <div className={`stat-value ${accent === "brand" ? "stat-brand" : ""}`}>
-        {value}
-      </div>
+      <span className="stat-label">{label}</span>
+      <span className={`stat-value ${accent ? "stat-accent" : ""}`}>{value}</span>
     </div>
   );
 }

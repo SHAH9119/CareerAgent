@@ -37,11 +37,11 @@
 }
 
 .fit-good {
-  background: linear-gradient(90deg, var(--good), #4ade80);
+  background: var(--good);
 }
 .fit-warn {
-  background: linear-gradient(90deg, var(--warn), #fbbf24);
+  background: var(--warn);
 }
 .fit-bad {
-  background: linear-gradient(90deg, var(--danger), #f87171);
+  background: var(--danger);
 }

@@ -118,7 +118,7 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun, onLogout 
         <header className="settings-header">
           <div>
             <h1>Settings</h1>
-            <p>Tune the rules used by the matcher and decision engine. Pick a preset or edit the JSON directly.</p>
+            <p>Manage API keys, candidate presets, and optional matching rules.</p>
           </div>
           <Button variant="primary" size="md" icon={<Icon name="check" size={13} />} onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save Settings"}
@@ -215,38 +215,40 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun, onLogout 
         </Card>
 
         <details className="settings-advanced">
-          <summary>Advanced scoring internals</summary>
-          <Card
-            title="Scoring Weights"
-            icon={<Icon name="brain" size={13} />}
-            subtitle="Internal formula weights used to calculate the final fit percentage."
-          >
-            <div className="weights-grid">
-              {Object.entries(weights).map(([key, value]) => (
-                <div key={key} className="weight-row">
-                  <div className="weight-row-head">
-                    <span>{key.replaceAll("_", " ")}</span>
-                    <strong>{Math.round(Number(value) * 100)}%</strong>
+          <summary>Advanced matching rules</summary>
+          <div className="settings-advanced-inner">
+            <Card
+              title="Scoring weights"
+              icon={<Icon name="brain" size={13} />}
+              subtitle="Internal formula weights for the fit percentage."
+            >
+              <div className="weights-grid">
+                {Object.entries(weights).map(([key, value]) => (
+                  <div key={key} className="weight-row">
+                    <div className="weight-row-head">
+                      <span>{key.replaceAll("_", " ")}</span>
+                      <strong>{Math.round(Number(value) * 100)}%</strong>
+                    </div>
+                    <input className="slider" type="range" min={0} max={50} value={Math.round(Number(value) * 100)} readOnly />
                   </div>
-                  <input className="slider" type="range" min={0} max={50} value={Math.round(Number(value) * 100)} readOnly />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </details>
+                ))}
+              </div>
+            </Card>
 
-        <Card
-          title="Domain Rules JSON"
-          icon={<Icon name="doc" size={13} />}
-          subtitle="Edit carefully. These rules directly change domain filtering and final scores."
-        >
-          <textarea
-            className="settings-json"
-            value={configText}
-            onChange={(event) => setConfigText(event.target.value)}
-            spellCheck={false}
-          />
-        </Card>
+            <Card
+              title="Domain rules JSON"
+              icon={<Icon name="doc" size={13} />}
+              subtitle="Edit carefully. Changes filtering and scoring behavior."
+            >
+              <textarea
+                className="settings-json"
+                value={configText}
+                onChange={(event) => setConfigText(event.target.value)}
+                spellCheck={false}
+              />
+            </Card>
+          </div>
+        </details>
 
         <footer className="settings-footer">
           <span>CareerAgent local prototype.</span>

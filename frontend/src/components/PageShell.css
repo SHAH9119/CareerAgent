@@ -3,18 +3,13 @@
   flex-direction: column;
   height: 100vh;
   background: var(--bg-app);
+  overflow: hidden;
 }
 
 .shell-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-.shell-main {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-

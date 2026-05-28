@@ -1,10 +1,12 @@
 .settings {
-  padding: 28px 32px 32px;
+  padding: 24px 28px 32px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  max-width: 1200px;
+  gap: 16px;
+  max-width: 1100px;
   margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .settings-header {
@@ -363,7 +365,14 @@
 
 .settings-advanced[open] > summary {
   color: var(--brand-strong);
-  background: var(--brand-soft-2);
-  border-color: #c8d8ff;
+  background: var(--brand-soft);
+  border-color: #bfdbfe;
+}
+
+.settings-advanced-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 4px;
 }
 

@@ -1,5 +1,4 @@
 import { Sidebar } from "./Sidebar";
-import { TopBar } from "./TopBar";
 import "./PageShell.css";
 
 export function PageShell({
@@ -9,7 +8,6 @@ export function PageShell({
   onProfileClick,
   onNewRun,
   onLogout,
-  showTopBar = true,
   children,
 }) {
   return (
@@ -22,10 +20,7 @@ export function PageShell({
         onNewRun={onNewRun}
         onLogout={onLogout}
       />
-      <div className="shell-body">
-        {showTopBar && <TopBar candidate={candidate} />}
-        <main className="shell-main">{children}</main>
-      </div>
+      <div className="shell-body">{children}</div>
     </div>
   );
 }

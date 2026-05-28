@@ -94,7 +94,6 @@ export function Tailoring({ activeNav, onNav, onProfileClick, onNewRun, onBack, 
       onProfileClick={onProfileClick}
       onNewRun={onNewRun}
       onLogout={onLogout}
-      showTopBar={false}
     >
       <div className="tailor">
         <header className="tailor-header">

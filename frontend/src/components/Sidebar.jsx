@@ -3,10 +3,10 @@ import { Icon } from "./icons";
 import "./Sidebar.css";
 
 const navItems = [
-  { id: "pipeline", label: "Dashboard", icon: "pipeline", hint: "Jobs, scores, and tailoring queue." },
-  { id: "intelligence", label: "Agent Run", icon: "brain", hint: "Pipeline progress and logs." },
-  { id: "resumes", label: "Tailoring", icon: "doc", hint: "Tailored resume drafts." },
-  { id: "settings", label: "Settings", icon: "gear", hint: "Domain rules and scoring weights." },
+  { id: "pipeline", label: "Dashboard", icon: "pipeline" },
+  { id: "intelligence", label: "Agent Run", icon: "brain" },
+  { id: "resumes", label: "Tailoring", icon: "doc" },
+  { id: "settings", label: "Settings", icon: "gear" },
 ];
 
 export function Sidebar({
@@ -17,72 +17,53 @@ export function Sidebar({
   onNewRun,
   onLogout,
 }) {
-  const displayCandidate = candidate || {
-    name: "Candidate",
-    initials: "CA",
-    title: "Profile not loaded",
-    location: "Run the agent",
-  };
+  const initials = candidate?.initials || "CA";
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-top">
-        <div className="brand">
-          <div className="brand-mark">
-            <Icon name="sparkle" size={16} />
-          </div>
-          <div>
-            <div className="brand-name">CareerAgent</div>
-            <div className="brand-sub">AI Intelligence</div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="profile-card"
-          onClick={onProfileClick}
-          title="Edit profile"
-        >
-          <div className="profile-avatar">{displayCandidate.initials}</div>
-          <div className="profile-body">
-            <div className="profile-name">{displayCandidate.name}</div>
-            <div className="profile-meta">{displayCandidate.title}</div>
-            <div className="profile-meta light">
-              <Icon name="pin" size={11} /> {displayCandidate.location}
-            </div>
-          </div>
-        </button>
-
-        <nav className="nav">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNav?.(item.id)}
-              title={item.hint}
-              className={`nav-item ${activeNav === item.id ? "nav-item-active" : ""}`}
-            >
-              <Icon name={item.icon} size={16} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
+    <header className="app-bar">
+      <div className="app-bar-brand">
+        <span className="app-bar-logo" aria-hidden>
+          <Icon name="sparkle" size={15} />
+        </span>
+        <span className="app-bar-name">CareerAgent</span>
       </div>
 
-      <div className="sidebar-bottom">
+      <nav className="app-bar-nav" aria-label="Main">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onNav?.(item.id)}
+            className={`app-bar-tab ${activeNav === item.id ? "app-bar-tab-active" : ""}`}
+          >
+            <Icon name={item.icon} size={15} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="app-bar-actions">
         <Button
           variant="primary"
-          size="md"
-          icon={<Icon name="plus" size={14} />}
+          size="sm"
+          icon={<Icon name="plus" size={13} />}
           onClick={onNewRun}
         >
           New Run
         </Button>
-        <button type="button" className="logout" onClick={onLogout}>
-          <Icon name="x" size={13} />
+        <button
+          type="button"
+          className="app-bar-avatar"
+          onClick={onProfileClick}
+          title={candidate?.name || "Profile"}
+          aria-label="Open profile"
+        >
+          {initials}
+        </button>
+        <button type="button" className="app-bar-logout" onClick={onLogout}>
           Logout
         </button>
       </div>
-    </aside>
+    </header>
   );
 }

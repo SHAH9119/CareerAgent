@@ -22,10 +22,10 @@ export function Badge({ tone = "neutral", children, size = "md" }) {
 
 export function VerdictBadge({ verdict }) {
   const map = {
-    APPLY: { tone: "apply", label: "APPLY" },
-    MAYBE: { tone: "maybe", label: "MAYBE" },
-    SKIP: { tone: "skip", label: "SKIP" },
-    STRETCH: { tone: "stretch", label: "STRETCH" },
+    APPLY: { tone: "apply", label: "Apply" },
+    MAYBE: { tone: "maybe", label: "Maybe" },
+    SKIP: { tone: "skip", label: "Skip" },
+    STRETCH: { tone: "stretch", label: "Stretch" },
   };
   const config = map[verdict] || map.MAYBE;
   return <Badge tone={config.tone}>{config.label}</Badge>;

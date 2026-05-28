@@ -8,8 +8,8 @@ import {
 } from "../api/careerAgent";
 import { Inspector } from "../components/Inspector";
 import { JobQueue } from "../components/JobQueue";
+import { PageShell } from "../components/PageShell";
 import { SearchParameters } from "../components/SearchParameters";
-import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import "./Dashboard.css";
 
@@ -176,7 +176,7 @@ export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun, onLogout
     setError("");
     try {
       const draft = await createTailorDraft(job);
-      setToast(`Tailoring draft #${draft.id} created for ${job.company}. Open the Resumes tab to review.`);
+      setToast(`Tailoring draft #${draft.id} created for ${job.company}. Open Tailoring to review.`);
     } catch (exc) {
       setError(exc.response?.data?.detail || exc.message || "Could not create tailoring draft.");
     }
@@ -185,18 +185,16 @@ export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun, onLogout
   const visibleJobs = useMemo(() => summary?.jobs || [], [summary]);
 
   return (
-    <div className="dashboard">
-      <Sidebar
-        candidate={profile}
-        activeNav={activeNav}
-        onNav={onNav}
-        onProfileClick={onProfileClick}
-        onNewRun={onNewRun}
-        onLogout={onLogout}
-      />
-      <div className="dashboard-body">
+    <PageShell
+      activeNav={activeNav}
+      candidate={profile}
+      onNav={onNav}
+      onProfileClick={onProfileClick}
+      onNewRun={onNewRun}
+      onLogout={onLogout}
+    >
+      <div className="dashboard">
         <TopBar
-          candidate={profile}
           search={search}
           onSearch={setSearch}
           onRun={handleRun}
@@ -209,7 +207,7 @@ export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun, onLogout
             {error || toast}
           </div>
         )}
-        <div className="dashboard-content">
+        <div className="dashboard-workspace">
           <SearchParameters
             config={runConfig}
             sources={sources}
@@ -238,6 +236,6 @@ export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun, onLogout
           />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
