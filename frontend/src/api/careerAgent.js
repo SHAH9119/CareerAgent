@@ -1,11 +1,46 @@
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const TOKEN_KEY = "careeragent_token";
 
 const client = axios.create({
   baseURL: API_BASE,
   timeout: 120000,
 });
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
+export function setToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function logout() {
+  setToken("");
+}
+
+client.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      logout();
+    }
+    return Promise.reject(error);
+  },
+);
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -142,6 +177,23 @@ export async function getDashboardData() {
     status: status.data || null,
     sources: adaptSources(sources.data || {}),
   };
+}
+
+export async function signup(payload) {
+  const { data } = await client.post("/auth/signup", payload);
+  setToken(data.token);
+  return data.user;
+}
+
+export async function login(payload) {
+  const { data } = await client.post("/auth/login", payload);
+  setToken(data.token);
+  return data.user;
+}
+
+export async function getMe() {
+  const { data } = await client.get("/auth/me");
+  return data.user;
 }
 
 export async function startAgent(payload) {

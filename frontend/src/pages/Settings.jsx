@@ -13,7 +13,7 @@ function sanitizeKey(value) {
   return value.replace(/[^A-Za-z0-9_\-.]/g, "").slice(0, 128);
 }
 
-export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
+export function Settings({ activeNav, onNav, onProfileClick, onNewRun, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [configPath, setConfigPath] = useState("");
   const [configText, setConfigText] = useState("{}");
@@ -97,7 +97,7 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
       const result = await saveApiKeys(toSave);
       setKeys(result.keys);
       setKeyInputs({ rapidapi_key: "", adzuna_app_id: "", adzuna_app_key: "", groq_api_key: "" });
-      setMessage("API keys saved securely.");
+      setMessage("API keys saved.");
     } catch (exc) {
       setMessage(exc.response?.data?.detail || exc.message || "Invalid key format.");
     } finally {
@@ -112,6 +112,7 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
       onNav={onNav}
       onProfileClick={onProfileClick}
       onNewRun={onNewRun}
+      onLogout={onLogout}
     >
       <div className="settings">
         <header className="settings-header">
@@ -178,7 +179,7 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
           </Card>
         </div>
 
-        <Card title="API Keys" icon={<Icon name="sparkle" size={13} />} subtitle="Enter keys for local development. They are stored on this machine and used by the backend when selected sources run.">
+        <Card title="API Keys" icon={<Icon name="sparkle" size={13} />} subtitle="Enter keys for your account. The backend uses them only when selected sources run.">
           <div className="keys-grid">
             <KeyField
               label="RapidAPI Key (JSearch / Indeed)"

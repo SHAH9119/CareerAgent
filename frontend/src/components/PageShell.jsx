@@ -8,6 +8,7 @@ export function PageShell({
   onNav,
   onProfileClick,
   onNewRun,
+  onLogout,
   showTopBar = true,
   children,
 }) {
@@ -19,6 +20,7 @@ export function PageShell({
         onNav={onNav}
         onProfileClick={onProfileClick}
         onNewRun={onNewRun}
+        onLogout={onLogout}
       />
       <div className="shell-body">
         {showTopBar && <TopBar candidate={candidate} />}

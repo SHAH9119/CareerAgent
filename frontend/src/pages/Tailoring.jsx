@@ -19,7 +19,7 @@ const statusTone = {
   rejected: "skip",
 };
 
-export function Tailoring({ activeNav, onNav, onProfileClick, onNewRun, onBack }) {
+export function Tailoring({ activeNav, onNav, onProfileClick, onNewRun, onBack, onLogout }) {
   const [drafts, setDrafts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -93,6 +93,7 @@ export function Tailoring({ activeNav, onNav, onProfileClick, onNewRun, onBack }
       onNav={onNav}
       onProfileClick={onProfileClick}
       onNewRun={onNewRun}
+      onLogout={onLogout}
       showTopBar={false}
     >
       <div className="tailor">

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import sys
 import threading
@@ -11,26 +12,48 @@ try:
 except Exception:
     pass
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from backend.rate_limit import check_rate_limit, client_key, env_limit
+from backend.security import CurrentUser, create_access_token, validate_email, validate_password
 from main import RUN_STATE_PATH, run_pipeline
 from matcher.domain_config import clear_domain_config_cache, load_domain_config
 from resume_tailor.tailor import create_tailor_draft, update_draft_status
-from storage.db import init_db, list_tailor_drafts, load_latest_decisions, load_latest_profile, save_profile
+from storage.db import (
+    create_user,
+    init_db,
+    list_tailor_drafts,
+    load_latest_decisions,
+    load_latest_profile,
+    load_scored_jobs,
+    load_user_api_keys,
+    save_profile,
+    save_user_api_keys,
+    verify_user,
+)
 
 app = FastAPI(title="CareerAgent API")
 
+cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 RESUMES_DIR = "resumes"
 DATA_DIR = "data"
+MAX_TARGET_JOBS = env_limit("MAX_TARGET_JOBS_PER_RUN", 30)
+MAX_CUSTOM_QUERIES = env_limit("MAX_CUSTOM_QUERIES", 6)
+PLATFORM_API_ENV = {
+    "RAPIDAPI_KEY": os.getenv("RAPIDAPI_KEY", ""),
+    "ADZUNA_APP_ID": os.getenv("ADZUNA_APP_ID", ""),
+    "ADZUNA_APP_KEY": os.getenv("ADZUNA_APP_KEY", ""),
+    "GROQ_API_KEY": os.getenv("GROQ_API_KEY", ""),
+}
 
 
 class AgentRunRequest(BaseModel):
@@ -72,6 +95,12 @@ class ApiKeysUpdate(BaseModel):
     groq_api_key: str = ""
 
 
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+
 class ParseResumeRequest(BaseModel):
     resume_path: str
     domain_config_path: str = ""
@@ -80,6 +109,7 @@ class ParseResumeRequest(BaseModel):
 run_lock = threading.Lock()
 run_thread: threading.Thread | None = None
 run_status = {"stage": "idle", "message": "Agent is idle."}
+run_status_by_user: dict[int, dict] = {}
 
 
 def load(path: str) -> Any:
@@ -95,25 +125,55 @@ def save(path: str, payload: Any) -> None:
         json.dump(payload, file, indent=2, ensure_ascii=False)
 
 
-def save_status(event: dict) -> None:
+@app.middleware("http")
+async def api_rate_limit(request: Request, call_next):
+    if request.method != "OPTIONS" and request.url.path.startswith("/api/"):
+        check_rate_limit(
+            client_key(request, scope="api"),
+            env_limit("RATE_LIMIT_API_PER_MINUTE", 180),
+            60,
+        )
+    return await call_next(request)
+
+
+def save_status(event: dict, user_id: int | None = None) -> None:
     global run_status
-    run_status = event
+    if user_id is not None:
+        run_status_by_user[user_id] = event
+    else:
+        run_status = event
     save(RUN_STATE_PATH, event)
 
 
 def _sanitize_queries(queries: list[str]) -> list[str]:
     """Strip dangerous characters from user-provided search queries."""
-    import re
     clean = []
-    for q in queries:
+    for q in queries[:MAX_CUSTOM_QUERIES]:
         sanitized = re.sub(r"[<>{}$`\\;|&!#%()\[\]]", "", q).strip()[:200]
         if sanitized:
             clean.append(sanitized)
     return clean
 
 
-def run_agent_background(payload: AgentRunRequest) -> None:
+def _apply_user_api_keys(user_id: int) -> None:
+    keys = load_user_api_keys(user_id, masked=False)
+    mapping = {
+        "RAPIDAPI_KEY": "rapidapi_key",
+        "ADZUNA_APP_ID": "adzuna_app_id",
+        "ADZUNA_APP_KEY": "adzuna_app_key",
+        "GROQ_API_KEY": "groq_api_key",
+    }
+    for env_key, key_name in mapping.items():
+        value = keys.get(key_name) or PLATFORM_API_ENV.get(env_key) or ""
+        if value:
+            os.environ[env_key] = value
+        elif env_key in os.environ:
+            del os.environ[env_key]
+
+
+def run_agent_background(payload: AgentRunRequest, user_id: int) -> None:
     try:
+        _apply_user_api_keys(user_id)
         run_pipeline(
             resume_path=payload.resume_path,
             source_names=payload.sources,
@@ -129,10 +189,12 @@ def run_agent_background(payload: AgentRunRequest) -> None:
             workplace_type=payload.workplace_type,
             domain_config_path=payload.domain_config_path,
             use_db=payload.use_db,
-            callback=save_status,
+            user_id=user_id,
+            profile_override=load_latest_profile(user_id) if payload.skip_parse else None,
+            callback=lambda event: save_status(event, user_id=user_id),
         )
     except Exception as exc:
-        save_status({"stage": "failed", "message": str(exc)})
+        save_status({"stage": "failed", "message": str(exc)}, user_id=user_id)
     finally:
         if run_lock.locked():
             run_lock.release()
@@ -157,24 +219,51 @@ def startup() -> None:
             os.environ[env_key] = saved_keys[config_key]
 
 
+@app.post("/api/auth/signup")
+def signup(payload: AuthRequest, request: Request):
+    check_rate_limit(client_key(request, scope="signup"), env_limit("RATE_LIMIT_SIGNUP_PER_HOUR", 6), 3600)
+    email = validate_email(payload.email)
+    password = validate_password(payload.password)
+    try:
+        user = create_user(email, password, payload.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"token": create_access_token(user), "user": user}
+
+
+@app.post("/api/auth/login")
+def login(payload: AuthRequest, request: Request):
+    check_rate_limit(client_key(request, scope="login"), env_limit("RATE_LIMIT_LOGIN_PER_MINUTE", 8), 60)
+    email = validate_email(payload.email)
+    user = verify_user(email, payload.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    return {"token": create_access_token(user), "user": user}
+
+
+@app.get("/api/auth/me")
+def me(user: CurrentUser):
+    return {"user": user}
+
+
 @app.get("/api/profile")
-def get_profile():
-    return load(os.path.join(DATA_DIR, "profile.json")) or load_latest_profile() or {}
+def get_profile(user: CurrentUser):
+    return load_latest_profile(user["id"]) or {}
 
 
 @app.get("/api/decisions")
-def get_decisions():
-    return load_latest_decisions() or load(os.path.join(DATA_DIR, "decisions.json")) or {}
+def get_decisions(user: CurrentUser):
+    return load_latest_decisions(user["id"]) or {}
 
 
 @app.get("/api/jobs")
-def get_jobs():
-    return load(os.path.join(DATA_DIR, "scored_jobs.json")) or []
+def get_jobs(user: CurrentUser):
+    return load_scored_jobs(user["id"]) or []
 
 
 @app.get("/api/summary")
-def get_summary():
-    decisions = get_decisions()
+def get_summary(user: CurrentUser):
+    decisions = load_latest_decisions(user["id"]) or {}
     if not decisions:
         return {}
 
@@ -192,13 +281,13 @@ def get_summary():
 
 
 @app.get("/api/domain-config")
-def get_domain_config(path: str = ""):
-    profile = get_profile()
+def get_domain_config(user: CurrentUser, path: str = ""):
+    profile = load_latest_profile(user["id"]) or {}
     return load_domain_config(profile, path or None)
 
 
 @app.post("/api/domain-config")
-def save_domain_config(payload: DomainConfigUpdate):
+def save_domain_config(payload: DomainConfigUpdate, user: CurrentUser):
     """Save a domain config and point the active profile at it.
 
     - Empty config payloads are rejected to prevent accidental clobbering of presets.
@@ -212,28 +301,30 @@ def save_domain_config(payload: DomainConfigUpdate):
         "config/candidates/software_engineer.json",
         "config/domain_config.default.json",
     }
-    os.makedirs("config/candidates", exist_ok=True)
+    user_config_dir = os.path.join("config", "users", str(user["id"]))
+    os.makedirs(user_config_dir, exist_ok=True)
     requested = (payload.path or "").replace("\\", "/")
-    if not requested or requested in curated:
-        target = os.path.join("config", "candidates", "active.json")
+    if not requested or requested in curated or not requested.startswith(f"config/users/{user['id']}/"):
+        target = os.path.join(user_config_dir, "domain_config.json")
     else:
-        target = payload.path
+        target = requested
 
     os.makedirs(os.path.dirname(target) or ".", exist_ok=True)
     with open(target, "w", encoding="utf-8") as file:
         json.dump(payload.config, file, indent=2, ensure_ascii=False)
     clear_domain_config_cache()
 
-    profile = get_profile()
+    profile = load_latest_profile(user["id"]) or {}
     profile["domain_config_path"] = target
     save(os.path.join(DATA_DIR, "profile.json"), profile)
-    save_profile(profile)
+    save_profile(profile, user_id=user["id"])
 
     return {"path": target, "config": payload.config}
 
 
 @app.post("/api/profile/parse")
-def parse_profile(payload: ParseResumeRequest):
+def parse_profile(payload: ParseResumeRequest, request: Request, user: CurrentUser):
+    check_rate_limit(client_key(request, user["id"], "parse"), env_limit("RATE_LIMIT_PARSE_PER_HOUR", 10), 3600)
     if not payload.resume_path:
         raise HTTPException(status_code=400, detail="resume_path is required.")
     if not os.path.exists(payload.resume_path):
@@ -245,18 +336,20 @@ def parse_profile(payload: ParseResumeRequest):
     if payload.domain_config_path:
         profile["domain_config_path"] = payload.domain_config_path
     save(os.path.join(DATA_DIR, "profile.json"), profile)
-    save_profile(profile)
+    save_profile(profile, user_id=user["id"])
     return profile
 
 
 @app.post("/api/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
+async def upload_resume(request: Request, user: CurrentUser, file: UploadFile = File(...)):
+    check_rate_limit(client_key(request, user["id"], "upload"), env_limit("RATE_LIMIT_UPLOAD_PER_HOUR", 12), 3600)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF resumes are supported.")
 
-    os.makedirs(RESUMES_DIR, exist_ok=True)
+    user_resume_dir = os.path.join(RESUMES_DIR, str(user["id"]))
+    os.makedirs(user_resume_dir, exist_ok=True)
     safe_name = os.path.basename(file.filename)
-    destination = os.path.join(RESUMES_DIR, safe_name)
+    destination = os.path.join(user_resume_dir, safe_name)
 
     with open(destination, "wb") as out_file:
         shutil.copyfileobj(file.file, out_file)
@@ -265,25 +358,31 @@ async def upload_resume(file: UploadFile = File(...)):
 
 
 @app.post("/api/run-agent")
-def start_agent(payload: AgentRunRequest):
+def start_agent(payload: AgentRunRequest, request: Request, user: CurrentUser):
     global run_thread, run_status
+
+    check_rate_limit(client_key(request, user["id"], "run-agent"), env_limit("RATE_LIMIT_RUNS_PER_HOUR", 5), 3600)
+    if payload.target_jobs > MAX_TARGET_JOBS:
+        raise HTTPException(status_code=400, detail=f"target_jobs cannot exceed {MAX_TARGET_JOBS} on this deployment.")
+    payload.custom_queries = _sanitize_queries(payload.custom_queries)
 
     if not run_lock.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="Agent is already running.")
 
-    run_status = {"stage": "starting", "message": "Agent run starting.", "sources": payload.sources}
-    save(RUN_STATE_PATH, run_status)
-    run_thread = threading.Thread(target=run_agent_background, args=(payload,), daemon=True)
+    user_status = {"stage": "starting", "message": "Agent run starting.", "sources": payload.sources}
+    run_status_by_user[user["id"]] = user_status
+    save(RUN_STATE_PATH, user_status)
+    run_thread = threading.Thread(target=run_agent_background, args=(payload, user["id"]), daemon=True)
     run_thread.start()
-    return run_status
+    return user_status
 
 
 @app.get("/api/run-agent/status")
-def get_agent_status():
+def get_agent_status(user: CurrentUser):
     if run_lock.locked():
-        return run_status
+        return run_status_by_user.get(user["id"], {"stage": "running", "message": "Another run is currently active."})
     persisted = load(RUN_STATE_PATH)
-    return persisted or run_status
+    return run_status_by_user.get(user["id"]) or persisted or run_status
 
 
 @app.get("/api/sources")
@@ -381,9 +480,9 @@ def _sanitize_key(value: str) -> str:
 
 
 @app.get("/api/keys")
-def get_api_keys():
-    """Return masked keys so the UI can show what's configured."""
-    keys = load(KEYS_PATH) or {}
+def get_api_keys(user: CurrentUser):
+    """Return masked per-user keys so the UI can show what's configured."""
+    keys = load_user_api_keys(user["id"], masked=True)
     env_rapid = os.getenv("RAPIDAPI_KEY", "")
     env_adzuna_id = os.getenv("ADZUNA_APP_ID", "")
     env_adzuna_key = os.getenv("ADZUNA_APP_KEY", "")
@@ -397,9 +496,10 @@ def get_api_keys():
 
 
 @app.post("/api/keys")
-def save_api_keys(payload: ApiKeysUpdate):
-    """Save user-provided API keys to local config. Validates format."""
-    keys = load(KEYS_PATH) or {}
+def save_api_keys(payload: ApiKeysUpdate, request: Request, user: CurrentUser):
+    """Save user-provided API keys to local SQLite. Validates format."""
+    check_rate_limit(client_key(request, user["id"], "keys"), env_limit("RATE_LIMIT_KEYS_PER_HOUR", 20), 3600)
+    keys = {}
     if payload.rapidapi_key:
         keys["rapidapi_key"] = _sanitize_key(payload.rapidapi_key)
     if payload.adzuna_app_id:
@@ -409,38 +509,30 @@ def save_api_keys(payload: ApiKeysUpdate):
     if payload.groq_api_key:
         keys["groq_api_key"] = _sanitize_key(payload.groq_api_key)
 
-    os.makedirs(os.path.dirname(KEYS_PATH), exist_ok=True)
-    save(KEYS_PATH, keys)
+    masked = save_user_api_keys(user["id"], keys)
+    _apply_user_api_keys(user["id"])
 
-    # Also inject into environment for immediate use
-    for env_key, config_key in [
-        ("RAPIDAPI_KEY", "rapidapi_key"),
-        ("ADZUNA_APP_ID", "adzuna_app_id"),
-        ("ADZUNA_APP_KEY", "adzuna_app_key"),
-        ("GROQ_API_KEY", "groq_api_key"),
-    ]:
-        if keys.get(config_key):
-            os.environ[env_key] = keys[config_key]
-
-    return {"status": "saved", "keys": get_api_keys()}
+    return {"status": "saved", "keys": masked}
 
 
 @app.post("/api/tailor/draft")
-def tailor_draft(payload: TailorRequest):
-    profile = get_profile()
+def tailor_draft(payload: TailorRequest, request: Request, user: CurrentUser):
+    check_rate_limit(client_key(request, user["id"], "tailor"), env_limit("RATE_LIMIT_TAILOR_PER_HOUR", 12), 3600)
+    _apply_user_api_keys(user["id"])
+    profile = load_latest_profile(user["id"]) or {}
     if not profile:
         raise HTTPException(status_code=400, detail="No profile found. Upload resume and run agent first.")
-    return create_tailor_draft(profile, payload.job)
+    return create_tailor_draft(profile, payload.job, user_id=user["id"])
 
 
 @app.get("/api/tailor/drafts")
-def tailor_drafts(status: str | None = None):
-    return list_tailor_drafts(status)
+def tailor_drafts(user: CurrentUser, status: str | None = None):
+    return list_tailor_drafts(status, user_id=user["id"])
 
 
 @app.post("/api/tailor/status")
-def tailor_status(payload: TailorStatusRequest):
+def tailor_status(payload: TailorStatusRequest, user: CurrentUser):
     try:
-        return update_draft_status(payload.draft_id, payload.status, payload.notes)
+        return update_draft_status(payload.draft_id, payload.status, payload.notes, user_id=user["id"])
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

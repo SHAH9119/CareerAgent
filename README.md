@@ -24,6 +24,7 @@ its scoring rules from layered config files instead of hard-coded role assumptio
 - **Resume tailoring**: per-job tailored draft with draft -> review -> approved
   workflow stored in SQLite.
 - **React + Vite dashboard** for the whole flow (jobs, fit, tailoring, settings).
+- **Auth + abuse limits**: email/password signup, bearer-token sessions, per-user API-key settings, target-job caps, and endpoint rate limits.
 
 ## Setup
 
@@ -40,11 +41,16 @@ Copy `.env.example` to `.env` and set the secrets you have:
 LLM_PROVIDER=groq
 GROQ_API_KEY=gsk_...        # required for resume parsing, fit analysis, and tailoring
 GROQ_API_KEY_2=gsk_...      # optional fallback key
+AUTH_SECRET=change-me       # required before public deployment
 
 ADZUNA_APP_ID=              # optional, only needed if you select the Adzuna source
 ADZUNA_APP_KEY=
 RAPIDAPI_KEY=               # optional, only needed if you select JSearch
 ```
+
+Users can also add their own RapidAPI, Adzuna, and Groq keys from the Settings
+page after signup. Those keys are stored per user in the configured database and
+are masked in the UI.
 
 ## Run the app
 
@@ -66,8 +72,29 @@ npm run dev
 
 Open http://localhost:5173 (or whatever port Vite reports) in your browser.
 
-The default landing page is the Dashboard. Click your profile in the sidebar to
-re-upload a resume, or use "Run agent" to scrape jobs.
+Create an account, then use Settings for API keys and the Dashboard to upload a
+resume/run the agent.
+
+## Deployment notes
+
+This repo is now deployable as a protected demo, but there are two deployment
+levels:
+
+1. **Demo deployment**: Railway/Render/Fly for FastAPI, Vercel/Netlify for React,
+   SQLite on a persistent volume, conservative rate limits, and users bringing
+   their own API keys.
+2. **Real SaaS**: move from SQLite to Postgres/Supabase, store user API keys with
+   managed encryption/KMS, add email verification/password reset, background jobs
+   for long runs, and provider-level billing/quotas.
+
+Important env values before public launch:
+
+```env
+AUTH_SECRET=long-random-production-secret
+MAX_TARGET_JOBS_PER_RUN=30
+RATE_LIMIT_RUNS_PER_HOUR=5
+RATE_LIMIT_TAILOR_PER_HOUR=12
+```
 
 ## Domain rules (no code edits)
 

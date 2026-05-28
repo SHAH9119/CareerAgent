@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getMe, getToken, logout } from "./api/careerAgent";
 import { AgentRun } from "./pages/AgentRun";
+import { Auth } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
 import { Onboarding } from "./pages/Onboarding";
 import { Settings } from "./pages/Settings";
@@ -23,6 +25,16 @@ const PAGE_TO_NAV = {
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(Boolean(getToken()));
+
+  useEffect(() => {
+    if (!getToken()) return;
+    getMe()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
 
   const activeNav = PAGE_TO_NAV[page] || "pipeline";
 
@@ -37,7 +49,21 @@ export default function App() {
     onProfileClick: () => setPage("onboarding"),
     onNewRun: () => setPage("agent-run"),
     onBack: () => setPage("dashboard"),
+    currentUser: user,
+    onLogout: () => {
+      logout();
+      setUser(null);
+      setPage("dashboard");
+    },
   };
+
+  if (authLoading) {
+    return <div className="app-loading">Loading CareerAgent...</div>;
+  }
+
+  if (!user) {
+    return <Auth onAuthed={setUser} />;
+  }
 
   switch (page) {
     case "onboarding":

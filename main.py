@@ -83,6 +83,8 @@ def run_pipeline(
     workplace_type: str = "",
     domain_config_path: str = "",
     use_db: bool = True,
+    user_id: int | None = None,
+    profile_override: dict | None = None,
     callback: ProgressCallback | None = None,
 ) -> dict:
     """Run the full agent pipeline and persist every stage to data/*.json."""
@@ -101,7 +103,7 @@ def run_pipeline(
     try:
         if skip_parse:
             emit("profile", "Loading existing profile.", callback)
-            profile = read_json(PROFILE_PATH, {})
+            profile = profile_override or read_json(PROFILE_PATH, {})
             if not profile:
                 raise FileNotFoundError("data/profile.json does not exist. Run without skip_parse first.")
         else:
@@ -182,7 +184,7 @@ def run_pipeline(
         if use_db:
             from storage.db import sync_pipeline_results
 
-            sync_pipeline_results(profile, jobs, scored_jobs, decisions, read_json(RUN_STATE_PATH, {}))
+            sync_pipeline_results(profile, jobs, scored_jobs, decisions, read_json(RUN_STATE_PATH, {}), user_id=user_id)
 
         result = {
             "stage": "succeeded",

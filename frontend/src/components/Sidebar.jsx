@@ -15,6 +15,7 @@ export function Sidebar({
   onNav,
   onProfileClick,
   onNewRun,
+  onLogout,
 }) {
   const displayCandidate = candidate || {
     name: "Candidate",
@@ -77,6 +78,10 @@ export function Sidebar({
         >
           New Run
         </Button>
+        <button type="button" className="logout" onClick={onLogout}>
+          <Icon name="x" size={13} />
+          Logout
+        </button>
       </div>
     </aside>
   );

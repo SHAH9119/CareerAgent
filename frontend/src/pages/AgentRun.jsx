@@ -44,7 +44,7 @@ const tagColor = {
   ERROR: "log-error",
 };
 
-export function AgentRun({ activeNav, onNav, onProfileClick, onNewRun, onBack }) {
+export function AgentRun({ activeNav, onNav, onProfileClick, onNewRun, onBack, onLogout }) {
   const [status, setStatus] = useState({ stage: "idle", message: "Agent is idle." });
   const [summary, setSummary] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -122,6 +122,7 @@ export function AgentRun({ activeNav, onNav, onProfileClick, onNewRun, onBack })
       onNav={onNav}
       onProfileClick={onProfileClick}
       onNewRun={onNewRun}
+      onLogout={onLogout}
       showTopBar={false}
     >
       <div className="run">

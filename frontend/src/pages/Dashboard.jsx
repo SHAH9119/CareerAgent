@@ -61,7 +61,7 @@ function buildRunPayload(config) {
   };
 }
 
-export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun }) {
+export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [sources, setSources] = useState([]);
@@ -190,6 +190,7 @@ export function Dashboard({ activeNav, onNav, onProfileClick, onNewRun }) {
         onNav={onNav}
         onProfileClick={onProfileClick}
         onNewRun={onNewRun}
+        onLogout={onLogout}
       />
       <div className="dashboard-body">
         <TopBar

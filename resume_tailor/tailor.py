@@ -11,7 +11,7 @@ from storage.db import save_tailor_draft
 load_dotenv()
 
 
-def create_tailor_draft(profile: dict, job: dict) -> dict:
+def create_tailor_draft(profile: dict, job: dict, user_id: int | None = None) -> dict:
     """Generate a tailored resume draft for one job. Status starts as 'draft'."""
     prompt = f"""
 You are an expert resume writer. Tailor this candidate's resume for ONE job.
@@ -46,17 +46,18 @@ Return plain text resume sections:
         draft_text=draft_text,
         status="draft",
         notes="AI-generated draft awaiting human review.",
+        user_id=user_id,
     )
 
 
-def update_draft_status(draft_id: int, status: str, notes: str = "") -> dict:
+def update_draft_status(draft_id: int, status: str, notes: str = "", user_id: int | None = None) -> dict:
     allowed = {"draft", "review", "approved", "rejected"}
     if status not in allowed:
         raise ValueError(f"status must be one of {sorted(allowed)}")
 
     from storage.db import list_tailor_drafts
 
-    drafts = list_tailor_drafts()
+    drafts = list_tailor_drafts(user_id=user_id)
     current = next((item for item in drafts if item["id"] == draft_id), None)
     if not current:
         raise ValueError("Draft not found")
@@ -69,4 +70,5 @@ def update_draft_status(draft_id: int, status: str, notes: str = "") -> dict:
         status=status,
         notes=notes or current.get("notes", ""),
         draft_id=draft_id,
+        user_id=user_id,
     )
