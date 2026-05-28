@@ -1,0 +1,85 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: var(--fs-xs);
+  padding: 3px 9px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.badge-md {
+  font-size: var(--fs-xs);
+  padding: 4px 10px;
+}
+
+.badge-sm {
+  font-size: 10px;
+  padding: 2px 7px;
+}
+
+.badge-apply {
+  color: var(--good-strong);
+  background: var(--good-soft);
+  border-color: #b7ecc8;
+}
+
+.badge-maybe {
+  color: var(--warn-strong);
+  background: var(--warn-soft);
+  border-color: #f6dca4;
+}
+
+.badge-skip {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: #f4c6c6;
+}
+
+.badge-stretch {
+  color: #6d28d9;
+  background: #f1ebff;
+  border-color: #ddd1ff;
+}
+
+.badge-info {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: #c8d8ff;
+}
+
+.badge-neutral {
+  color: var(--text-secondary);
+  background: var(--bg-soft);
+  border-color: var(--border);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.badge-prototype {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: #c8d8ff;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.badge-soon {
+  color: var(--text-muted);
+  background: var(--bg-soft);
+  border-color: var(--border);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.badge-active {
+  color: var(--good-strong);
+  background: var(--good-soft);
+  border-color: #b7ecc8;
+  text-transform: none;
+  letter-spacing: 0;
+}

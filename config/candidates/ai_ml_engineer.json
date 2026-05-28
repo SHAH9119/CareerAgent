@@ -1,0 +1,50 @@
+{
+  "primary_domain": "ai_ml_software",
+  "target_title_terms": {
+    "ai_ml_software": [
+      "machine learning",
+      "ml engineer",
+      "ai engineer",
+      "computer vision",
+      "deep learning",
+      "data scientist",
+      "data engineer",
+      "research engineer",
+      "python developer",
+      "mlops"
+    ]
+  },
+  "wrong_domain_title_terms": [
+    "rf survey",
+    "rail engineer",
+    "structural engineer",
+    "dams engineer",
+    "geotechnical",
+    "engineering geologist",
+    "environmental engineer",
+    "remediation",
+    "mining engineer",
+    "ios developer",
+    "android developer",
+    "mobile developer",
+    "annotation specialist",
+    "ai trainer",
+    "language generalist"
+  ],
+  "requirement_signal_terms": [
+    "python",
+    "pytorch",
+    "tensorflow",
+    "scikit-learn",
+    "fastapi",
+    "rest api",
+    "git",
+    "docker",
+    "machine learning",
+    "deep learning",
+    "computer vision",
+    "data pipeline",
+    "model deployment",
+    "mlops"
+  ]
+}

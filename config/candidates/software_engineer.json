@@ -1,0 +1,43 @@
+{
+  "primary_domain": "software_engineering",
+  "target_title_terms": {
+    "software_engineering": [
+      "software engineer",
+      "backend engineer",
+      "frontend engineer",
+      "full stack",
+      "fullstack",
+      "web developer",
+      "platform engineer",
+      "devops engineer",
+      "cloud engineer"
+    ]
+  },
+  "wrong_domain_title_terms": [
+    "ai trainer",
+    "annotation",
+    "language generalist",
+    "translator",
+    "rf survey",
+    "rail engineer",
+    "structural engineer",
+    "mining engineer",
+    "geotechnical"
+  ],
+  "requirement_signal_terms": [
+    "javascript",
+    "typescript",
+    "react",
+    "node",
+    "python",
+    "go",
+    "java",
+    "rest api",
+    "graphql",
+    "docker",
+    "kubernetes",
+    "aws",
+    "ci/cd",
+    "git"
+  ]
+}

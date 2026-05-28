@@ -1,0 +1,260 @@
+.params {
+  padding: 20px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.params-heading {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+/* --- Sections --- */
+.param-section {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.param-section:last-of-type {
+  border-bottom: none;
+}
+
+.param-section-highlight {
+  background: var(--brand-soft-2);
+  margin: 0 -16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border-bottom: none;
+}
+
+.param-section-muted {
+  opacity: 0.85;
+}
+
+.section-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+}
+
+.section-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+/* --- Radio pills (single select) --- */
+.radio-group {
+  display: flex;
+  gap: 6px;
+}
+
+.radio-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-secondary);
+  transition: all 0.12s ease;
+}
+
+.radio-pill input[type="radio"] {
+  display: none;
+}
+
+.radio-pill:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.radio-pill-active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+/* --- Inputs --- */
+.param-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  background: #fff;
+  color: var(--text-primary);
+}
+
+.param-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--brand-soft);
+}
+
+.param-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.param-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 56px;
+  background: #fff;
+  color: var(--text-primary);
+}
+
+.param-textarea:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--brand-soft);
+}
+
+/* --- Row of 2 fields --- */
+.param-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.param-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* --- File upload --- */
+.file-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  transition: border-color 0.12s;
+}
+
+.file-control:hover {
+  border-color: var(--brand);
+}
+
+.file-control input[type="file"] {
+  display: none;
+}
+
+/* --- Sources checklist --- */
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+}
+
+.source-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand);
+}
+
+.source-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.source-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* --- Advanced details --- */
+details summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.param-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.param-check input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--brand);
+}
+
+/* --- Run status --- */
+.run-status {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.run-status-starting,
+.run-status-queries,
+.run-status-jobs,
+.run-status-matching,
+.run-status-decision {
+  background: var(--brand-soft-2);
+  color: var(--brand-strong);
+}
+
+.run-status-succeeded {
+  background: #ecfdf5;
+  color: var(--good-strong);
+}
+
+.run-status-failed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}

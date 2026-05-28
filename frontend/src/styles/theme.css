@@ -1,0 +1,61 @@
+:root {
+  /* Surfaces */
+  --bg-app: #f7f8fb;
+  --bg-panel: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-soft: #f1f4f9;
+  --bg-soft-2: #eef2f7;
+
+  /* Borders */
+  --border: #e4e8ef;
+  --border-strong: #d4dae3;
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Brand */
+  --brand: #2563eb;
+  --brand-strong: #1d4ed8;
+  --brand-soft: #e8efff;
+  --brand-soft-2: #f0f5ff;
+
+  /* Status */
+  --good: #16a34a;
+  --good-soft: #e7f7ee;
+  --good-strong: #15803d;
+
+  --warn: #d97706;
+  --warn-soft: #fff4e0;
+  --warn-strong: #b45309;
+
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --danger-strong: #b91c1c;
+
+  --info: #2563eb;
+  --info-soft: #e8efff;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+
+  /* Type */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 20px;
+  --fs-3xl: 26px;
+  --fs-4xl: 34px;
+}

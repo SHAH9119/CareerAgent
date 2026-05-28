@@ -1,0 +1,31 @@
+.toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  position: relative;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  transition: transform 0.18s ease;
+}
+
+.toggle-on {
+  background: var(--brand);
+}
+
+.toggle-on .toggle-knob {
+  transform: translateX(16px);
+}

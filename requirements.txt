@@ -7,3 +7,4 @@ python-dotenv>=1.0.0
 sentence-transformers>=3.2.0
 torch>=2.4.0
 uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
