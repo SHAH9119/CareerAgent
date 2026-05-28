@@ -42,6 +42,7 @@ LLM_PROVIDER=groq
 GROQ_API_KEY=gsk_...        # required for resume parsing, fit analysis, and tailoring
 GROQ_API_KEY_2=gsk_...      # optional fallback key
 AUTH_SECRET=change-me       # required before public deployment
+DATABASE_URL=               # optional Supabase/Postgres URL; empty uses local SQLite
 
 ADZUNA_APP_ID=              # optional, only needed if you select the Adzuna source
 ADZUNA_APP_KEY=
@@ -51,6 +52,15 @@ RAPIDAPI_KEY=               # optional, only needed if you select JSearch
 Users can also add their own RapidAPI, Adzuna, and Groq keys from the Settings
 page after signup. Those keys are stored per user in the configured database and
 are masked in the UI.
+
+For Supabase database mode, use the database connection string from Supabase:
+
+```env
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.bshplcsjqfjhgqyiscuk.supabase.co:5432/postgres
+```
+
+Keep this in backend environment variables only. Do not put the database password
+in frontend code, screenshots, README examples, or GitHub.
 
 ## Run the app
 
@@ -91,6 +101,7 @@ Important env values before public launch:
 
 ```env
 AUTH_SECRET=long-random-production-secret
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.bshplcsjqfjhgqyiscuk.supabase.co:5432/postgres
 MAX_TARGET_JOBS_PER_RUN=30
 RATE_LIMIT_RUNS_PER_HOUR=5
 RATE_LIMIT_TAILOR_PER_HOUR=12
