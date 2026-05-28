@@ -16,6 +16,18 @@ load_dotenv()
 EXCLUDED_TITLE_TERMS_BY_LEVEL: dict[str, list[str]] = {}
 WRONG_DOMAIN_TITLE_TERMS: list[str] = []
 
+SOURCE_EXPLANATIONS = {
+    "remotive": "public Remotive remote-jobs API, no key",
+    "remoteok": "public RemoteOK JSON feed, no key",
+    "arbeitnow": "public Arbeitnow job-board API, no key",
+    "adzuna": "official Adzuna Jobs API, needs ADZUNA_APP_ID + ADZUNA_APP_KEY",
+    "jsearch": "RapidAPI JSearch aggregator, needs RAPIDAPI_KEY; not a direct Indeed scraper",
+    "manual": "local data/manual_jobs.json file, no web request",
+    "existing": "local data/jobs.json cache from a previous run",
+    "council_boards": "configured public board URLs from config/job_boards.json",
+    "linkedin_local": "local Playwright browser session using saved LinkedIn login",
+}
+
 
 @dataclass
 class JobSearchPreferences:
@@ -258,6 +270,10 @@ def build_sources(source_names: list[str], adzuna_country: str = "us") -> list[J
     return sources
 
 
+def describe_source(source_name: str) -> str:
+    return SOURCE_EXPLANATIONS.get(source_name, "custom source adapter")
+
+
 def resolve_queries(profile: dict, generated: list[str], preferences: JobSearchPreferences) -> list[str]:
     if preferences.custom_queries:
         from scraper.scraper import sanitize_search_queries
@@ -281,7 +297,7 @@ def collect_jobs(
     jobs = []
 
     for source in sources:
-        print(f"Searching source: {source.name}")
+        print(f"Searching source: {source.name} ({describe_source(source.name)})")
         source_jobs = source.search(queries, preferences)
         print(f"  {source.name}: {len(source_jobs)} jobs")
         jobs.extend(source_jobs)

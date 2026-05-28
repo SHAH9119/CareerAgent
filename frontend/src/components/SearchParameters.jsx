@@ -161,7 +161,12 @@ export function SearchParameters({
                   checked={selectedSources.includes(source.id)}
                   onChange={() => toggleSource(source.id)}
                 />
-                <span className="source-label">{source.label}</span>
+                <span className="source-copy">
+                  <span className="source-label">{source.label}</span>
+                  {source.description && (
+                    <span className="source-description">{source.description}</span>
+                  )}
+                </span>
                 {source.needs_api_key && (
                   <Badge tone="info" size="sm">
                     Key
