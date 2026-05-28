@@ -11,7 +11,7 @@ const WORKPLACE_OPTIONS = [
 
 function sanitizeQuery(value) {
   return value
-    .replace(/[<>{}$`\\;|&!#%()\[\]]/g, "")
+    .replace(/[<>{}$`\\;|&!#%()[\]]/g, "")
     .slice(0, 500);
 }
 

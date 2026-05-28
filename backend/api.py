@@ -65,6 +65,13 @@ class DomainConfigUpdate(BaseModel):
     config: dict = Field(default_factory=dict)
 
 
+class ApiKeysUpdate(BaseModel):
+    rapidapi_key: str = ""
+    adzuna_app_id: str = ""
+    adzuna_app_key: str = ""
+    groq_api_key: str = ""
+
+
 class ParseResumeRequest(BaseModel):
     resume_path: str
     domain_config_path: str = ""
@@ -94,6 +101,17 @@ def save_status(event: dict) -> None:
     save(RUN_STATE_PATH, event)
 
 
+def _sanitize_queries(queries: list[str]) -> list[str]:
+    """Strip dangerous characters from user-provided search queries."""
+    import re
+    clean = []
+    for q in queries:
+        sanitized = re.sub(r"[<>{}$`\\;|&!#%()\[\]]", "", q).strip()[:200]
+        if sanitized:
+            clean.append(sanitized)
+    return clean
+
+
 def run_agent_background(payload: AgentRunRequest) -> None:
     try:
         run_pipeline(
@@ -106,7 +124,7 @@ def run_agent_background(payload: AgentRunRequest) -> None:
             adzuna_country=payload.adzuna_country,
             skip_parse=payload.skip_parse,
             skip_scrape=payload.skip_scrape,
-            custom_queries=payload.custom_queries or None,
+            custom_queries=_sanitize_queries(payload.custom_queries) or None,
             sector=payload.sector,
             workplace_type=payload.workplace_type,
             domain_config_path=payload.domain_config_path,
@@ -126,6 +144,17 @@ def startup() -> None:
         init_db()
     except Exception as exc:
         print(f"DB init warning: {exc}")
+
+    # Load user-saved API keys into env
+    saved_keys = load(KEYS_PATH) or {}
+    for env_key, config_key in [
+        ("RAPIDAPI_KEY", "rapidapi_key"),
+        ("ADZUNA_APP_ID", "adzuna_app_id"),
+        ("ADZUNA_APP_KEY", "adzuna_app_key"),
+        ("GROQ_API_KEY", "groq_api_key"),
+    ]:
+        if saved_keys.get(config_key) and not os.getenv(env_key):
+            os.environ[env_key] = saved_keys[config_key]
 
 
 @app.get("/api/profile")
@@ -331,6 +360,69 @@ def list_sources():
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+KEYS_PATH = os.path.join("config", "api_keys.json")
+KEY_PATTERN = r"^[A-Za-z0-9_\-\.]+$"
+
+
+def _mask(value: str) -> str:
+    if not value or len(value) < 8:
+        return "***" if value else ""
+    return value[:4] + "..." + value[-4:]
+
+
+def _sanitize_key(value: str) -> str:
+    import re
+    cleaned = value.strip()[:128]
+    if cleaned and not re.match(KEY_PATTERN, cleaned):
+        raise HTTPException(status_code=400, detail=f"Invalid key format. Only alphanumeric, dash, underscore, dot allowed.")
+    return cleaned
+
+
+@app.get("/api/keys")
+def get_api_keys():
+    """Return masked keys so the UI can show what's configured."""
+    keys = load(KEYS_PATH) or {}
+    env_rapid = os.getenv("RAPIDAPI_KEY", "")
+    env_adzuna_id = os.getenv("ADZUNA_APP_ID", "")
+    env_adzuna_key = os.getenv("ADZUNA_APP_KEY", "")
+    env_groq = os.getenv("GROQ_API_KEY", "")
+    return {
+        "rapidapi_key": _mask(keys.get("rapidapi_key") or env_rapid),
+        "adzuna_app_id": _mask(keys.get("adzuna_app_id") or env_adzuna_id),
+        "adzuna_app_key": _mask(keys.get("adzuna_app_key") or env_adzuna_key),
+        "groq_api_key": _mask(keys.get("groq_api_key") or env_groq),
+    }
+
+
+@app.post("/api/keys")
+def save_api_keys(payload: ApiKeysUpdate):
+    """Save user-provided API keys to local config. Validates format."""
+    keys = load(KEYS_PATH) or {}
+    if payload.rapidapi_key:
+        keys["rapidapi_key"] = _sanitize_key(payload.rapidapi_key)
+    if payload.adzuna_app_id:
+        keys["adzuna_app_id"] = _sanitize_key(payload.adzuna_app_id)
+    if payload.adzuna_app_key:
+        keys["adzuna_app_key"] = _sanitize_key(payload.adzuna_app_key)
+    if payload.groq_api_key:
+        keys["groq_api_key"] = _sanitize_key(payload.groq_api_key)
+
+    os.makedirs(os.path.dirname(KEYS_PATH), exist_ok=True)
+    save(KEYS_PATH, keys)
+
+    # Also inject into environment for immediate use
+    for env_key, config_key in [
+        ("RAPIDAPI_KEY", "rapidapi_key"),
+        ("ADZUNA_APP_ID", "adzuna_app_id"),
+        ("ADZUNA_APP_KEY", "adzuna_app_key"),
+        ("GROQ_API_KEY", "groq_api_key"),
+    ]:
+        if keys.get(config_key):
+            os.environ[env_key] = keys[config_key]
+
+    return {"status": "saved", "keys": get_api_keys()}
 
 
 @app.post("/api/tailor/draft")

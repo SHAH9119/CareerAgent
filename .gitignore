@@ -1,4 +1,5 @@
 .env
+config/api_keys.json
 data/
 resumes/
 __pycache__/

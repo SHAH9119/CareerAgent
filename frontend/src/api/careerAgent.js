@@ -192,6 +192,16 @@ export async function updateTailorDraftStatus(draftId, status, notes = "") {
   return data;
 }
 
+export async function getApiKeys() {
+  const { data } = await client.get("/keys");
+  return data || {};
+}
+
+export async function saveApiKeys(keys) {
+  const { data } = await client.post("/keys", keys);
+  return data;
+}
+
 export async function getDomainConfig(path = "") {
   const { data } = await client.get("/domain-config", {
     params: path ? { path } : {},

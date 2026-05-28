@@ -4,10 +4,14 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Icon } from "../components/icons";
 import { PageShell } from "../components/PageShell";
-import { getDashboardData, getDomainConfig, saveDomainConfig } from "../api/careerAgent";
+import { getApiKeys, getDashboardData, getDomainConfig, saveApiKeys, saveDomainConfig } from "../api/careerAgent";
 import "./Settings.css";
 
 const stringify = (value) => JSON.stringify(value || {}, null, 2);
+
+function sanitizeKey(value) {
+  return value.replace(/[^A-Za-z0-9_\-.]/g, "").slice(0, 128);
+}
 
 export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
   const [profile, setProfile] = useState(null);
@@ -15,15 +19,19 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
   const [configText, setConfigText] = useState("{}");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [keys, setKeys] = useState({ rapidapi_key: "", adzuna_app_id: "", adzuna_app_key: "", groq_api_key: "" });
+  const [keyInputs, setKeyInputs] = useState({ rapidapi_key: "", adzuna_app_id: "", adzuna_app_key: "", groq_api_key: "" });
+  const [keySaving, setKeySaving] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const data = await getDashboardData();
+      const [data, existingKeys] = await Promise.all([getDashboardData(), getApiKeys()]);
       const path = data.profile?.domain_config_path || "config/candidates/active.json";
       const config = await getDomainConfig(path);
       setProfile(data.profile);
       setConfigPath(path);
       setConfigText(stringify(config));
+      setKeys(existingKeys);
     }
     load().catch((exc) => setMessage(exc.response?.data?.detail || exc.message || "Could not load settings."));
   }, []);
@@ -71,6 +79,29 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
       setMessage(exc.response?.data?.detail || exc.message || "Could not save settings.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveKeys = async () => {
+    const toSave = {};
+    if (keyInputs.rapidapi_key) toSave.rapidapi_key = keyInputs.rapidapi_key;
+    if (keyInputs.adzuna_app_id) toSave.adzuna_app_id = keyInputs.adzuna_app_id;
+    if (keyInputs.adzuna_app_key) toSave.adzuna_app_key = keyInputs.adzuna_app_key;
+    if (keyInputs.groq_api_key) toSave.groq_api_key = keyInputs.groq_api_key;
+    if (!Object.keys(toSave).length) {
+      setMessage("Enter at least one key to save.");
+      return;
+    }
+    setKeySaving(true);
+    try {
+      const result = await saveApiKeys(toSave);
+      setKeys(result.keys);
+      setKeyInputs({ rapidapi_key: "", adzuna_app_id: "", adzuna_app_key: "", groq_api_key: "" });
+      setMessage("API keys saved securely.");
+    } catch (exc) {
+      setMessage(exc.response?.data?.detail || exc.message || "Invalid key format.");
+    } finally {
+      setKeySaving(false);
     }
   };
 
@@ -147,6 +178,41 @@ export function Settings({ activeNav, onNav, onProfileClick, onNewRun }) {
           </Card>
         </div>
 
+        <Card title="API Keys" icon={<Icon name="sparkle" size={13} />} subtitle="Enter keys for local development. They are stored on this machine and used by the backend when selected sources run.">
+          <div className="keys-grid">
+            <KeyField
+              label="RapidAPI Key (JSearch / Indeed)"
+              current={keys.rapidapi_key}
+              value={keyInputs.rapidapi_key}
+              onChange={(v) => setKeyInputs((prev) => ({ ...prev, rapidapi_key: sanitizeKey(v) }))}
+            />
+            <KeyField
+              label="Adzuna App ID"
+              current={keys.adzuna_app_id}
+              value={keyInputs.adzuna_app_id}
+              onChange={(v) => setKeyInputs((prev) => ({ ...prev, adzuna_app_id: sanitizeKey(v) }))}
+            />
+            <KeyField
+              label="Adzuna App Key"
+              current={keys.adzuna_app_key}
+              value={keyInputs.adzuna_app_key}
+              onChange={(v) => setKeyInputs((prev) => ({ ...prev, adzuna_app_key: sanitizeKey(v) }))}
+            />
+            <KeyField
+              label="Groq API Key (LLM)"
+              current={keys.groq_api_key}
+              value={keyInputs.groq_api_key}
+              onChange={(v) => setKeyInputs((prev) => ({ ...prev, groq_api_key: sanitizeKey(v) }))}
+            />
+          </div>
+          <div className="keys-actions">
+            <Button variant="primary" size="sm" onClick={handleSaveKeys} disabled={keySaving}>
+              {keySaving ? "Saving..." : "Save Keys"}
+            </Button>
+            <span className="keys-hint">Only alphanumeric, dash, underscore, and dot allowed. Max 128 chars.</span>
+          </div>
+        </Card>
+
         <Card
           title="Scoring Weights"
           icon={<Icon name="brain" size={13} />}
@@ -193,5 +259,23 @@ function Field({ label, children }) {
       <span className="field-label">{label}</span>
       {children}
     </label>
+  );
+}
+
+function KeyField({ label, current, value, onChange }) {
+  return (
+    <div className="key-field">
+      <span className="key-label">{label}</span>
+      <span className="key-current">{current || "not set"}</span>
+      <input
+        className="key-input"
+        type="password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Paste new key..."
+        maxLength={128}
+        autoComplete="off"
+      />
+    </div>
   );
 }
