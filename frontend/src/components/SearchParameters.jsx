@@ -9,6 +9,12 @@ const WORKPLACE_OPTIONS = [
   { id: "on-site", label: "On-site" },
 ];
 
+function sanitizeQuery(value) {
+  return value
+    .replace(/[<>{}$`\\;|&!#%()\[\]]/g, "")
+    .slice(0, 500);
+}
+
 export function SearchParameters({
   config,
   sources = [],
@@ -99,36 +105,38 @@ export function SearchParameters({
           className="param-textarea"
           rows={3}
           value={queries}
-          onChange={(event) => update({ custom_queries: event.target.value })}
+          onChange={(event) => update({ custom_queries: sanitizeQuery(event.target.value) })}
           placeholder="Machine Learning Engineer, Computer Vision, Python Developer"
+          maxLength={500}
         />
       </section>
 
-      {/* --- Section 5: Target + Country --- */}
+      {/* --- Section 5: Target Jobs --- */}
       <section className="param-section">
-        <div className="param-row-2">
-          <label className="param-field">
-            <span className="field-label">Max Jobs</span>
-            <input
-              className="param-input"
-              type="number"
-              min={5}
-              max={100}
-              value={config.target_jobs}
-              onChange={(event) => update({ target_jobs: Number(event.target.value) })}
-            />
-          </label>
-          <label className="param-field">
-            <span className="field-label">Adzuna Country</span>
-            <input
-              className="param-input"
-              value={config.adzuna_country || "us"}
-              onChange={(event) => update({ adzuna_country: event.target.value })}
-              placeholder="us"
-              disabled={!selectedSources.includes("adzuna")}
-            />
-          </label>
-        </div>
+        <h3 className="section-title">How Many Jobs</h3>
+        <p className="section-hint">Max jobs to collect and score per run.</p>
+        <input
+          className="param-input param-input-sm"
+          type="number"
+          min={5}
+          max={100}
+          value={config.target_jobs}
+          onChange={(event) => update({ target_jobs: Number(event.target.value) })}
+        />
+        {selectedSources.includes("adzuna") && (
+          <div className="adzuna-row">
+            <label className="param-field">
+              <span className="field-label">Adzuna Country Code</span>
+              <input
+                className="param-input param-input-sm"
+                value={config.adzuna_country || "us"}
+                onChange={(event) => update({ adzuna_country: event.target.value.replace(/[^a-z]/g, "").slice(0, 2) })}
+                placeholder="us"
+                maxLength={2}
+              />
+            </label>
+          </div>
+        )}
       </section>
 
       {/* --- Section 6: Data Sources --- */}

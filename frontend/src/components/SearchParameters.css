@@ -111,6 +111,14 @@
   cursor: not-allowed;
 }
 
+.param-input-sm {
+  max-width: 100px;
+}
+
+.adzuna-row {
+  margin-top: 10px;
+}
+
 .param-textarea {
   width: 100%;
   padding: 8px 10px;
