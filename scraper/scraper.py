@@ -11,6 +11,7 @@ from playwright.sync_api import sync_playwright
 
 from llm import llm_json, llm_text
 from scraper.job_text import clean_job_description as shared_clean_job_description
+from scraper.utils import clean_strings, safe_join
 
 load_dotenv()
 LINKEDIN_COOKIE = os.getenv("LINKEDIN_COOKIE")
@@ -212,9 +213,9 @@ def extract_job_details_from_html(html: str, fallback: dict) -> dict:
 
 def generate_smart_query(profile: dict) -> str:
     """Use the LLM to design one high-performing search string."""
-    skills = ", ".join(profile.get("skills", [])[:10])
-    projects = ", ".join([p.get("name", "") for p in profile.get("projects", [])])
-    titles = ", ".join(profile.get("job_titles", []))
+    skills = safe_join((profile.get("skills") or [])[:10])
+    projects = safe_join([p.get("name", "") for p in profile.get("projects", []) if isinstance(p, dict)])
+    titles = safe_join(profile.get("job_titles", []))
 
     prompt = f"""
 Design ONE professional LinkedIn search query for this candidate.
@@ -235,16 +236,17 @@ Example: Embedded AI Engineer FPGA
 
 def generate_search_plan(profile: dict) -> list:
     """Use the LLM to design 3 distinct search queries."""
-    titles = ", ".join(profile.get("job_titles", []))
-    projects = ", ".join([p.get("name", "") for p in profile.get("projects", [])])
-    skills = ", ".join(profile.get("skills", [])[:10])
-    keywords = ", ".join(profile.get("job_search_keywords", [])[:10])
+    titles = safe_join(profile.get("job_titles", []))
+    projects = safe_join([p.get("name", "") for p in profile.get("projects", []) if isinstance(p, dict)])
+    skills = safe_join((profile.get("skills") or [])[:10])
+    keywords = safe_join((profile.get("job_search_keywords") or [])[:10])
     career_stage = profile.get("career_stage", "")
     desired_role_level = profile.get("desired_role_level", "")
     education = ", ".join(
         [
             f"{item.get('degree', '')} {item.get('institution', '')} {item.get('year', '')}".strip()
             for item in profile.get("education", [])
+            if isinstance(item, dict)
         ]
     )
 
@@ -275,7 +277,7 @@ Return ONLY JSON in this format:
     if not queries and isinstance(data, dict):
         queries = next((value for value in data.values() if isinstance(value, list)), [])
 
-    return sanitize_search_queries(queries or [], profile)
+    return sanitize_search_queries(clean_strings(queries or []), profile)
 
 
 def sanitize_search_queries(queries: list[str], profile: dict) -> list[str]:

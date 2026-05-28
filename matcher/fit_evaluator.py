@@ -1,6 +1,7 @@
 import re
 
 from matcher.domain_config import load_domain_config
+from scraper.utils import safe_join
 
 
 DOMAIN_GROUPS: dict[str, list[str]] = {}
@@ -36,27 +37,30 @@ def normalize(text: str) -> str:
 
 def profile_text(profile: dict) -> str:
     parts = [
-        " ".join(profile.get("job_titles", [])),
-        " ".join(profile.get("job_search_keywords", [])),
-        " ".join(profile.get("skills", [])),
+        safe_join(profile.get("job_titles", []), " "),
+        safe_join(profile.get("job_search_keywords", []), " "),
+        safe_join(profile.get("skills", []), " "),
         profile.get("summary", ""),
         profile.get("career_stage", ""),
         profile.get("desired_role_level", ""),
     ]
 
     for item in profile.get("education", []):
-        parts.extend([item.get("degree", ""), item.get("institution", "")])
+        if isinstance(item, dict):
+            parts.extend([item.get("degree", ""), item.get("institution", "")])
     for item in profile.get("work_experience", []):
-        parts.extend([item.get("title", ""), item.get("company", ""), item.get("description", "")])
+        if isinstance(item, dict):
+            parts.extend([item.get("title", ""), item.get("company", ""), item.get("description", "")])
     for item in profile.get("projects", []):
-        parts.extend([item.get("name", ""), item.get("description", ""), " ".join(item.get("technologies", []))])
+        if isinstance(item, dict):
+            parts.extend([item.get("name", ""), item.get("description", ""), safe_join(item.get("technologies", []), " ")])
 
-    return normalize(" ".join(parts))
+    return normalize(safe_join(parts, " "))
 
 
 def job_text(job: dict) -> str:
     return normalize(
-        " ".join(
+        safe_join(
             [
                 job.get("title", ""),
                 job.get("company", ""),
@@ -64,7 +68,8 @@ def job_text(job: dict) -> str:
                 job.get("employment_type", ""),
                 job.get("seniority_level", ""),
                 job.get("description", ""),
-            ]
+            ],
+            " ",
         )
     )
 
@@ -239,7 +244,7 @@ def score_skills(matched: list[str], missing: list[str], classifications: dict) 
 
 def score_job_quality(job: dict) -> int:
     score = 55
-    text = normalize(" ".join([job.get("posted_at", ""), job.get("applicants", ""), job.get("salary", "")]))
+    text = normalize(safe_join([job.get("posted_at", ""), job.get("applicants", ""), job.get("salary", "")], " "))
 
     if re.search(r"\b(\d+)\s+(minute|hour|day)s?\s+ago\b", text):
         score += 15

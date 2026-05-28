@@ -7,6 +7,7 @@ import re
 from llm import llm_json
 from matcher.domain_config import load_domain_config
 from matcher.fit_evaluator import evaluate_fit, score_domain
+from scraper.utils import clean_strings, safe_join
 
 load_dotenv()
 
@@ -36,25 +37,27 @@ def build_resume_text(profile: dict) -> str:
 
     titles = profile.get("job_titles", [])
     if titles:
-        parts.append(f"Target roles: {', '.join(titles)}")
+        parts.append(f"Target roles: {safe_join(titles)}")
 
     skills = profile.get("skills", [])
     if skills:
-        parts.append(f"Skills: {', '.join(skills)}")
+        parts.append(f"Skills: {safe_join(skills)}")
 
     for exp in profile.get("work_experience", []):
-        parts.append(f"Work: {exp['title']} at {exp['company']}. {exp['description']}")
+        if isinstance(exp, dict):
+            parts.append(f"Work: {exp.get('title', '')} at {exp.get('company', '')}. {exp.get('description', '')}")
 
     for proj in profile.get("projects", []):
-        techs = ", ".join(proj.get("technologies", []))
-        parts.append(f"Project: {proj['name']} using {techs}. {proj['description']}")
+        if isinstance(proj, dict):
+            techs = safe_join(proj.get("technologies", []))
+            parts.append(f"Project: {proj.get('name', '')} using {techs}. {proj.get('description', '')}")
 
     edu = profile.get("education", [])
     if edu:
         for e in edu:
             parts.append(f"Education: {e.get('degree', '')} from {e.get('institution', '')}")
 
-    return " | ".join(parts)
+    return " | ".join(clean_strings(parts))
 
 
 def build_job_text(job: dict) -> str:
@@ -161,9 +164,9 @@ def heuristic_skill_gap(profile: dict, job: dict, reason: str = "deterministic f
 
 def normalize_gap(gap: dict, source: str) -> dict:
     return {
-        "required_skills": gap.get("required_skills", []) or [],
-        "matched_skills": gap.get("matched_skills", []) or [],
-        "missing_skills": gap.get("missing_skills", []) or [],
+        "required_skills": clean_strings(gap.get("required_skills", []) or []),
+        "matched_skills": clean_strings(gap.get("matched_skills", []) or []),
+        "missing_skills": clean_strings(gap.get("missing_skills", []) or []),
         "recommendation": gap.get("recommendation", "") or "No recommendation returned.",
         "gap_source": gap.get("gap_source", source),
     }
@@ -254,8 +257,8 @@ def match_jobs(profile: dict, jobs: list) -> list:
         fit = evaluate_fit(profile, job, match_score, gap)
         print(f"    Fit Score: {fit['final_score']}%")
         print(f"    Gap Source: {gap.get('gap_source', 'unknown')}")
-        print(f"    Matched: {', '.join(gap['matched_skills'][:3])}")
-        print(f"    Missing: {', '.join(gap['missing_skills'][:3])}")
+        print(f"    Matched: {safe_join(gap['matched_skills'][:3])}")
+        print(f"    Missing: {safe_join(gap['missing_skills'][:3])}")
 
         scored_jobs.append({
             **job,
@@ -298,7 +301,7 @@ if __name__ == "__main__":
     for i, job in enumerate(scored[:10]):
         print(f"\n#{i+1} {job['title']} @ {job['company']}")
         print(f"   Score: {job['match_score']}%")
-        print(f"   Missing: {', '.join(job['missing_skills'][:3]) or 'None'}")
+        print(f"   Missing: {safe_join(job['missing_skills'][:3]) or 'None'}")
         print(f"   Verdict: {job['recommendation']}")
 
     print("\nScored jobs saved to data/scored_jobs.json")

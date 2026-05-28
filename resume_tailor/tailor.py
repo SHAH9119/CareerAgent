@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 
 from llm import llm_text
+from scraper.utils import safe_join
 from storage.db import save_tailor_draft
 
 load_dotenv()
@@ -26,8 +27,8 @@ Company: {job.get('company')}
 Description excerpt:
 {(job.get('description') or '')[:3500]}
 
-Matched skills: {', '.join(job.get('matched_skills', [])[:12])}
-Gaps to address carefully: {', '.join((job.get('fit') or {}).get('nice_to_have_gaps', [])[:8])}
+Matched skills: {safe_join((job.get('matched_skills') or [])[:12])}
+Gaps to address carefully: {safe_join(((job.get('fit') or {}).get('nice_to_have_gaps') or [])[:8])}
 
 Return plain text resume sections:
 - Professional Summary (3-4 lines)

@@ -11,7 +11,7 @@ from html import unescape
 from bs4 import BeautifulSoup
 
 from scraper.job_text import clean_job_description, clean_text
-from scraper.utils import distribute_target
+from scraper.utils import clean_strings, distribute_target, safe_join
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -99,19 +99,22 @@ def query_matches_job(query: str, job: dict) -> bool:
     if not important_words:
         return True
 
-    title_tags = " ".join(
+    title_tags = safe_join(
         [
             job.get("title", ""),
             job.get("company", ""),
             job.get("location", ""),
-            " ".join(job.get("tags", []) or []),
-        ]
-    ).lower()
-    full_text = " ".join(
+            safe_join(job.get("tags", []) or [], " "),
+        ],
+        " ",
+    )
+    title_tags = title_tags.lower()
+    full_text = safe_join(
         [
             title_tags,
             job.get("description", "")[:1500],
-        ]
+        ],
+        " ",
     ).lower()
 
     if any(word in title_tags for word in important_words):
@@ -368,14 +371,12 @@ class JSearchSource:
                         "title": clean_text(unescape(item.get("job_title", ""))),
                         "company": clean_text(unescape(item.get("employer_name", ""))) or "Unknown",
                         "location": clean_text(
-                            ", ".join(
-                                part
-                                for part in [
+                            safe_join(
+                                [
                                     item.get("job_city"),
                                     item.get("job_state"),
                                     item.get("job_country"),
                                 ]
-                                if part
                             )
                         ) or ("Remote" if item.get("job_is_remote") else ""),
                         "url": item.get("job_apply_link") or item.get("job_google_link") or "",

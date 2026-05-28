@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from llm import llm_json
 from matcher.domain_config import load_domain_config
+from scraper.utils import safe_join
 
 load_dotenv()
 
@@ -144,7 +145,7 @@ def get_global_skill_gaps(profile: dict, scored_jobs: list) -> dict:
             f"Job: {job.get('title')} at {job.get('company')} "
             f"(Final: {job.get('final_score', job.get('match_score'))}%, "
             f"Domain: {fit.get('domain_fit')}, Seniority: {fit.get('seniority_label')})\n"
-            f"Useful gaps: {', '.join(useful_gaps)}"
+            f"Useful gaps: {safe_join(useful_gaps)}"
         )
 
     if not all_missing:
@@ -163,9 +164,9 @@ Candidate evidence:
 {candidate_evidence}
 
 Fit jobs only:
-{chr(10).join(top_descriptions[:8])}
+{safe_join(top_descriptions[:8], chr(10))}
 
-Useful missing skills across fit jobs: {', '.join(all_missing)}
+Useful missing skills across fit jobs: {safe_join(all_missing)}
 
 Identify the TOP 5 practical skills this candidate should learn to improve matches.
 

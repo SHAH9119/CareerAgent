@@ -54,16 +54,18 @@ def emit(stage: str, message: str, callback: ProgressCallback | None = None, **e
 
 
 def fallback_queries(profile: dict) -> list[str]:
+    from scraper.utils import clean_strings, safe_join
+
     titles = profile.get("job_titles") or []
     skills = profile.get("skills") or []
     role_level = profile.get("desired_role_level") or ""
 
     queries = []
     if titles:
-        queries.extend(titles[:3])
+        queries.extend(clean_strings(titles)[:3])
     if skills:
         prefix = role_level if role_level and role_level not in {"mid-level", "senior"} else ""
-        queries.append(f"{prefix} {' '.join(skills[:2])}".strip())
+        queries.append(f"{prefix} {safe_join(skills[:2], ' ')}".strip())
 
     return queries[:3] or ["Software Engineer"]
 
@@ -138,9 +140,12 @@ def run_pipeline(
             from scraper.scraper import generate_search_plan
 
             queries = custom_queries or generate_search_plan(profile) or fallback_queries(profile)
-            emit("queries", f"Search plan ready: {', '.join(queries)}.", callback, queries=queries)
+            from scraper.utils import clean_strings, safe_join
 
-            emit("jobs", f"Collecting jobs from {', '.join(source_names)}.", callback)
+            queries = clean_strings(queries)
+            emit("queries", f"Search plan ready: {safe_join(queries)}.", callback, queries=queries)
+
+            emit("jobs", f"Collecting jobs from {safe_join(source_names)}.", callback)
             from scraper.sources import JobSearchPreferences, collect_jobs
 
             preferences = JobSearchPreferences(
