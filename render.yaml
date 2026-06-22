@@ -3,19 +3,19 @@ services:
     name: careeragent-api
     runtime: python
     plan: free
+    region: oregon
+    branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.9"
+        value: 3.11.11
       - key: AUTH_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false
+        value: http://localhost:5173
       - key: GROQ_API_KEY
-        sync: false
-      - key: DATABASE_URL
         sync: false
       - key: MAX_TARGET_JOBS_PER_RUN
         value: "25"
