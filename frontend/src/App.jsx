@@ -1,30 +1,68 @@
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getMe, getToken, logout } from "./api/careerAgent";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 import { AgentRun } from "./pages/AgentRun";
 import { Auth } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
+import { Landing } from "./pages/Landing";
 import { Onboarding } from "./pages/Onboarding";
 import { Settings } from "./pages/Settings";
 import { Tailoring } from "./pages/Tailoring";
 import "./styles/theme.css";
 
-const NAV_TO_PAGE = {
-  pipeline: "dashboard",
-  intelligence: "agent-run",
-  resumes: "tailoring",
-  settings: "settings",
+const NAV_TO_PATH = {
+  pipeline: "/dashboard",
+  intelligence: "/agent-run",
+  resumes: "/tailoring",
+  settings: "/settings",
 };
 
-const PAGE_TO_NAV = {
-  dashboard: "pipeline",
-  "agent-run": "intelligence",
-  tailoring: "resumes",
-  settings: "settings",
-  onboarding: "pipeline",
+const PATH_TO_NAV = {
+  "/dashboard": "pipeline",
+  "/agent-run": "intelligence",
+  "/tailoring": "resumes",
+  "/settings": "settings",
+  "/onboarding": "pipeline",
 };
+
+function ProtectedApp({ user, onLogout }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeNav = PATH_TO_NAV[location.pathname] || "pipeline";
+
+  const handleNav = (navId) => {
+    const path = NAV_TO_PATH[navId];
+    if (path) navigate(path);
+  };
+
+  const shellProps = {
+    activeNav,
+    onNav: handleNav,
+    onProfileClick: () => navigate("/onboarding"),
+    onNewRun: () => navigate("/agent-run"),
+    onBack: () => navigate("/dashboard"),
+    currentUser: user,
+    onLogout: () => {
+      logout();
+      onLogout();
+      navigate("/");
+    },
+  };
+
+  return (
+    <Routes>
+      <Route path="/dashboard" element={<Dashboard {...shellProps} />} />
+      <Route path="/agent-run" element={<AgentRun {...shellProps} />} />
+      <Route path="/tailoring" element={<Tailoring {...shellProps} />} />
+      <Route path="/settings" element={<Settings {...shellProps} />} />
+      <Route path="/onboarding" element={<Onboarding onComplete={() => navigate("/dashboard")} />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
 
 export default function App() {
-  const [page, setPage] = useState("dashboard");
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(Boolean(getToken()));
 
@@ -36,46 +74,34 @@ export default function App() {
       .finally(() => setAuthLoading(false));
   }, []);
 
-  const activeNav = PAGE_TO_NAV[page] || "pipeline";
-
-  const handleNav = (navId) => {
-    const nextPage = NAV_TO_PAGE[navId];
-    if (nextPage) setPage(nextPage);
-  };
-
-  const shellProps = {
-    activeNav,
-    onNav: handleNav,
-    onProfileClick: () => setPage("onboarding"),
-    onNewRun: () => setPage("agent-run"),
-    onBack: () => setPage("dashboard"),
-    currentUser: user,
-    onLogout: () => {
-      logout();
-      setUser(null);
-      setPage("dashboard");
-    },
-  };
-
   if (authLoading) {
-    return <div className="app-loading">Loading CareerAgent...</div>;
+    return <LoadingSpinner label="Loading CareerAgent..." />;
   }
 
-  if (!user) {
-    return <Auth onAuthed={setUser} />;
-  }
-
-  switch (page) {
-    case "onboarding":
-      return <Onboarding onComplete={() => setPage("dashboard")} />;
-    case "agent-run":
-      return <AgentRun {...shellProps} />;
-    case "tailoring":
-      return <Tailoring {...shellProps} />;
-    case "settings":
-      return <Settings {...shellProps} />;
-    case "dashboard":
-    default:
-      return <Dashboard {...shellProps} />;
-  }
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Navigate to="/dashboard" replace /> : <Landing />}
+      />
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/dashboard" replace /> : <Auth mode="login" onAuthed={setUser} />}
+      />
+      <Route
+        path="/signup"
+        element={user ? <Navigate to="/dashboard" replace /> : <Auth mode="signup" onAuthed={setUser} />}
+      />
+      <Route
+        path="/*"
+        element={
+          user ? (
+            <ProtectedApp user={user} onLogout={() => setUser(null)} />
+          ) : (
+            <Navigate to="/login" replace state={{ from: window.location.pathname }} />
+          )
+        }
+      />
+    </Routes>
+  );
 }

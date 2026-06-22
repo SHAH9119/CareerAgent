@@ -107,10 +107,18 @@ class ParseResumeRequest(BaseModel):
     domain_config_path: str = ""
 
 
-run_lock = threading.Lock()
-run_thread: threading.Thread | None = None
+run_locks_guard = threading.Lock()
+run_locks: dict[int, threading.Lock] = {}
+run_threads: dict[int, threading.Thread] = {}
 run_status = {"stage": "idle", "message": "Agent is idle."}
 run_status_by_user: dict[int, dict] = {}
+
+
+def _user_run_lock(user_id: int) -> threading.Lock:
+    with run_locks_guard:
+        if user_id not in run_locks:
+            run_locks[user_id] = threading.Lock()
+        return run_locks[user_id]
 
 
 def load(path: str) -> Any:
@@ -198,8 +206,9 @@ def run_agent_background(payload: AgentRunRequest, user_id: int) -> None:
     except Exception as exc:
         save_status({"stage": "failed", "message": str(exc)}, user_id=user_id)
     finally:
-        if run_lock.locked():
-            run_lock.release()
+        user_lock = _user_run_lock(user_id)
+        if user_lock.locked():
+            user_lock.release()
 
 
 @app.on_event("startup")
@@ -361,30 +370,34 @@ async def upload_resume(request: Request, user: CurrentUser, file: UploadFile = 
 
 @app.post("/api/run-agent")
 def start_agent(payload: AgentRunRequest, request: Request, user: CurrentUser):
-    global run_thread, run_status
+    user_id = user["id"]
+    user_lock = _user_run_lock(user_id)
 
-    check_rate_limit(client_key(request, user["id"], "run-agent"), env_limit("RATE_LIMIT_RUNS_PER_HOUR", 5), 3600)
+    check_rate_limit(client_key(request, user_id, "run-agent"), env_limit("RATE_LIMIT_RUNS_PER_HOUR", 5), 3600)
     if payload.target_jobs > MAX_TARGET_JOBS:
         raise HTTPException(status_code=400, detail=f"target_jobs cannot exceed {MAX_TARGET_JOBS} on this deployment.")
     payload.custom_queries = _sanitize_queries(payload.custom_queries)
 
-    if not run_lock.acquire(blocking=False):
-        raise HTTPException(status_code=409, detail="Agent is already running.")
+    if not user_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="You already have an agent run in progress.")
 
     user_status = {"stage": "starting", "message": "Agent run starting.", "sources": payload.sources}
-    run_status_by_user[user["id"]] = user_status
+    run_status_by_user[user_id] = user_status
     save(RUN_STATE_PATH, user_status)
-    run_thread = threading.Thread(target=run_agent_background, args=(payload, user["id"]), daemon=True)
-    run_thread.start()
+    thread = threading.Thread(target=run_agent_background, args=(payload, user_id), daemon=True)
+    run_threads[user_id] = thread
+    thread.start()
     return user_status
 
 
 @app.get("/api/run-agent/status")
 def get_agent_status(user: CurrentUser):
-    if run_lock.locked():
-        return run_status_by_user.get(user["id"], {"stage": "running", "message": "Another run is currently active."})
+    user_id = user["id"]
+    user_lock = _user_run_lock(user_id)
+    if user_lock.locked():
+        return run_status_by_user.get(user_id, {"stage": "running", "message": "Agent run in progress."})
     persisted = load(RUN_STATE_PATH)
-    return run_status_by_user.get(user["id"]) or persisted or run_status
+    return run_status_by_user.get(user_id) or persisted or run_status
 
 
 @app.get("/api/sources")

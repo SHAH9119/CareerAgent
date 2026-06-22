@@ -73,7 +73,7 @@ export function Onboarding({ onComplete }) {
                 <>
                   <Icon name="doc" size={36} />
                   <strong>Drop your resume here or click to browse</strong>
-                  <span className="muted-tiny">PDF only. Stored locally on this machine.</span>
+                  <span className="muted-tiny">PDF only. Parsed securely in your workspace.</span>
                 </>
               ) : (
                 <>
@@ -95,9 +95,9 @@ export function Onboarding({ onComplete }) {
             {error && <div className="onb-error"><Icon name="warning" size={14} />{error}</div>}
 
             <div className="onb-trust">
-              <span><Icon name="check" size={11} /> FastAPI upload</span>
+              <span><Icon name="check" size={11} /> Secure upload</span>
               <span><Icon name="check" size={11} /> Groq LLM parsing</span>
-              <span><Icon name="check" size={11} /> Stored locally</span>
+              <span><Icon name="check" size={11} /> Per-user storage</span>
             </div>
           </div>
         ) : (
@@ -157,8 +157,8 @@ export function Onboarding({ onComplete }) {
         )}
 
         <footer className="onb-footer">
-          <span><Icon name="check" size={11} /> Resume stored locally in this prototype</span>
-          <span>v1.0</span>
+          <span><Icon name="check" size={11} /> Resume stored per user in your workspace</span>
+          <span>CareerAgent v1.0</span>
         </footer>
       </div>
     </div>

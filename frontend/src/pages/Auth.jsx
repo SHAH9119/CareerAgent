@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { login, signup } from "../api/careerAgent";
 import { Button } from "../components/Button";
 import { Icon } from "../components/icons";
 import "./Auth.css";
 
-export function Auth({ onAuthed }) {
-  const [mode, setMode] = useState("login");
+export function Auth({ mode: initialMode = "login", onAuthed }) {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -19,6 +21,7 @@ export function Auth({ onAuthed }) {
     try {
       const user = mode === "signup" ? await signup(form) : await login(form);
       onAuthed?.(user);
+      navigate("/dashboard");
     } catch (exc) {
       setError(exc.response?.data?.detail || exc.message || "Could not continue.");
     } finally {
@@ -26,10 +29,17 @@ export function Auth({ onAuthed }) {
     }
   };
 
+  const switchMode = () => {
+    const next = mode === "signup" ? "login" : "signup";
+    setMode(next);
+    setError("");
+    navigate(next === "signup" ? "/signup" : "/login", { replace: true });
+  };
+
   return (
     <main className="auth-page">
-      <section className="auth-panel">
-        <div className="auth-brand">
+      <section className="auth-hero">
+        <Link to="/" className="auth-brand">
           <div className="brand-mark auth-mark">
             <Icon name="sparkle" size={16} />
           </div>
@@ -37,11 +47,27 @@ export function Auth({ onAuthed }) {
             <div className="brand-name">CareerAgent</div>
             <div className="brand-sub">AI job intelligence</div>
           </div>
-        </div>
+        </Link>
 
-        <div className="auth-copy">
-          <h1>{mode === "signup" ? "Create your workspace" : "Welcome back"}</h1>
-          <p>Upload a resume, bring your own API keys, run job matching, and create tailored drafts from one protected dashboard.</p>
+        <div className="auth-hero-copy">
+          <h1>Your AI career co-pilot</h1>
+          <p>
+            Parse resumes, collect jobs from public APIs, score fit with semantic matching,
+            and generate tailored application drafts — all in one protected workspace.
+          </p>
+          <ul className="auth-highlights">
+            <li><Icon name="check" size={14} /> Multi-source job collection</li>
+            <li><Icon name="check" size={14} /> Apply / Maybe / Skip decisions</li>
+            <li><Icon name="check" size={14} /> Per-job resume tailoring</li>
+            <li><Icon name="check" size={14} /> Bring your own API keys</li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="auth-panel">
+        <div className="auth-panel-head">
+          <h2>{mode === "signup" ? "Create your account" : "Welcome back"}</h2>
+          <p>{mode === "signup" ? "Free to start. Add your Groq key in Settings after signup." : "Sign in to your workspace."}</p>
         </div>
 
         <form className="auth-form" onSubmit={submit}>
@@ -51,7 +77,7 @@ export function Auth({ onAuthed }) {
               <input
                 value={form.name}
                 onChange={(event) => update({ name: event.target.value.slice(0, 80) })}
-                placeholder="Syed Haider"
+                placeholder="Your name"
                 autoComplete="name"
               />
             </label>
@@ -87,16 +113,11 @@ export function Auth({ onAuthed }) {
           </Button>
         </form>
 
-        <button
-          type="button"
-          className="auth-switch"
-          onClick={() => {
-            setMode(mode === "signup" ? "login" : "signup");
-            setError("");
-          }}
-        >
+        <button type="button" className="auth-switch" onClick={switchMode}>
           {mode === "signup" ? "Already have an account? Log in" : "New here? Create an account"}
         </button>
+
+        <Link to="/" className="auth-back">← Back to home</Link>
       </section>
     </main>
   );
